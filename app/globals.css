@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+body {
+  font-family: var(--font-sans), sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 20% 0%, rgba(244, 244, 245, 1), transparent 50%),
+    radial-gradient(circle at 80% 0%, rgba(228, 228, 231, 0.8), transparent 45%);
+}
+
+code,
+pre {
+  font-family: var(--font-mono), monospace;
+}
