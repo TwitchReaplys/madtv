@@ -6,6 +6,10 @@ Multi-creator subscription platform MVP (HeroHero-like), now extended with:
 - creator microsites with theme accent + locked post teasers
 - audience-first public IA (`/`, `/explore`, `/for-creators`)
 - post comments gated by active membership or creator admin
+- featured media block on creator pages (intro Bunny video modal / featured image)
+- split Viewer vs Creator portals + role switcher in dashboard
+- analytics events API + daily aggregate worker jobs
+- platform admin panel (`/admin/*`) with worker heartbeat status
 - Redis queue + BullMQ worker for Stripe event processing
 
 ## Monorepo structure
@@ -56,6 +60,10 @@ Dark mode:
 
 - `/c/[slug]`:
   - cover/avatar/title/tagline/bio/social links
+  - featured media block:
+    - intro Bunny preview card (thumbnail fallback chain)
+    - modal iframe load only after click
+    - featured image fallback mode
   - tier cards near top
   - locked teasers for gated posts
   - sticky mobile subscribe CTA for non-members
@@ -66,6 +74,32 @@ Dark mode:
   - paywall panel for unauthorized users with subscribe CTA
   - comments section (labelled `Komentáře k videu` when a Bunny video is attached)
   - comment write gate: active subscriber (rank >= 1) or creator admin
+
+### Portals and admin
+
+- Viewer portal:
+  - `/dashboard/viewer`
+  - `/dashboard/viewer/explore`
+  - `/dashboard/viewer/subscriptions`
+  - `/dashboard/viewer/profile`
+  - `/dashboard/viewer/billing`
+
+- Creator portal:
+  - `/dashboard/creator`
+  - `/dashboard/creator/[creatorId]/profile`
+  - `/dashboard/creator/[creatorId]/tiers`
+  - `/dashboard/creator/[creatorId]/posts`
+  - `/dashboard/creator/[creatorId]/videos`
+  - `/dashboard/creator/[creatorId]/subscribers`
+  - `/dashboard/creator/[creatorId]/analytics`
+  - `/dashboard/creator/[creatorId]/settings`
+
+- Admin panel:
+  - `/admin`
+  - `/admin/settings`
+  - `/admin/users`
+  - `/admin/creators`
+  - `/admin/services`
 
 SEO:
 - dynamic metadata via `generateMetadata` on creator and post routes
@@ -96,6 +130,7 @@ Base migration:
 Add-on migration:
 - `supabase/migrations/20260305110000_creator_theme_and_previews.sql`
 - `supabase/migrations/20260305130000_explore_and_comments.sql`
+- `supabase/migrations/20260305170000_portals_analytics_admin.sql`
 
 Added fields:
 - `creators.accent_color`
@@ -104,10 +139,25 @@ Added fields:
 - `creators.seo_description`
 - `creators.tagline`
 - `creators.social_links`
+- `creators.status`
+- `creators.is_featured`
+- `creators.featured_media_type`
+- `creators.featured_video_id`
+- `creators.featured_thumbnail_url`
+- `creators.featured_image_url`
 - `post_assets.meta`
+- `post_assets.creator_video_id`
 
 Added view:
 - `creator_explore` (public list view with creator data + starting price)
+
+New tables:
+- `creator_videos`
+- `analytics_events`
+- `analytics_daily_creator`
+- `platform_admins`
+- `platform_settings`
+- `service_status`
 
 Added SQL functions for safe public previews:
 - `creator_post_previews(p_creator_id uuid)`
@@ -137,6 +187,7 @@ Apply migrations (example):
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260304213000_init.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305110000_creator_theme_and_previews.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305130000_explore_and_comments.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305170000_portals_analytics_admin.sql
 ```
 
 Run web:
@@ -179,7 +230,11 @@ Health endpoint:
 1. Landing page is audience-first and top nav has `Explore`, `Jak to funguje`, `Pro tvůrce`, `Přihlásit se/Účet`.
 2. `/explore` lists creators with avatar, tagline, starting price and social icons.
 3. Creator page supports dark mode and shows tier cards + locked previews + sticky mobile subscribe CTA.
-4. Unauthorized post detail shows paywall panel.
-5. Authorized member sees full gated content + Bunny video.
-6. Comments are readable only when post is viewable and writable only by active subscribers/admins.
-7. Stripe webhook stores event and enqueues job; worker processes `stripe:event` and updates `subscriptions`.
+4. Creator featured media works (intro video modal or featured image).
+5. Unauthorized post detail shows paywall panel.
+6. Authorized member sees full gated content + Bunny video.
+7. Comments are readable only when post is viewable and writable only by active subscribers/admins.
+8. `/dashboard` auto-redirects to creator or viewer portal by role.
+9. `/api/analytics` stores events and worker fills `analytics_daily_creator`.
+10. Admin pages show settings/users/creators and worker heartbeat status.
+11. Stripe webhook stores event and enqueues job; worker processes `stripe:event` and updates `subscriptions`.

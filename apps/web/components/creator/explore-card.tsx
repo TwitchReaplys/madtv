@@ -19,6 +19,7 @@ export type ExploreCreator = {
   tagline: string | null;
   avatar_url: string | null;
   accent_color: string | null;
+  is_featured?: boolean | null;
   active_members_count?: number | null;
   starting_price_cents: number | null;
   currency: string | null;
@@ -85,6 +86,7 @@ export function ExploreCard({ creator }: { creator: ExploreCreator }) {
           <div className="min-w-0">
             <CardTitle className="truncate text-lg">{creator.title}</CardTitle>
             <p className="truncate text-sm text-zinc-600 dark:text-zinc-300">{creator.tagline || "Členství a bonusový obsah."}</p>
+            {creator.is_featured ? <p className="mt-1 text-xs font-semibold text-[var(--accent)]">Featured</p> : null}
           </div>
         </div>
       </CardHeader>

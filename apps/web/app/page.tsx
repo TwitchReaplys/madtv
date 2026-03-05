@@ -60,7 +60,8 @@ export default async function HomePage() {
       const supabase = await createServerSupabaseClient();
       const { data } = await supabase
         .from("creator_explore")
-        .select("id, slug, title, tagline, avatar_url, accent_color, social_links, active_members_count, starting_price_cents, currency")
+        .select("id, slug, title, tagline, avatar_url, accent_color, social_links, is_featured, active_members_count, starting_price_cents, currency")
+        .order("is_featured", { ascending: false })
         .order("active_members_count", { ascending: false })
         .order("title", { ascending: true })
         .limit(8);

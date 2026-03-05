@@ -26,6 +26,10 @@ export const creatorSchema = z.object({
   tiktokUrl: z.string().url().max(1000).optional().or(z.literal("")),
   youtubeUrl: z.string().url().max(1000).optional().or(z.literal("")),
   websiteUrl: z.string().url().max(1000).optional().or(z.literal("")),
+  featuredMediaType: z.enum(["none", "bunny_video", "image"]).optional().default("none"),
+  featuredVideoId: z.string().trim().optional().or(z.literal("")),
+  featuredThumbnailUrl: z.string().url().max(1000).optional().or(z.literal("")),
+  featuredImageUrl: z.string().url().max(1000).optional().or(z.literal("")),
 });
 
 export const tierCreateSchema = z.object({
@@ -72,6 +76,7 @@ export const postCreateSchema = z
     body: z.string().trim().max(50000).optional().or(z.literal("")),
     visibility: visibilityEnum,
     minTierRank: minRankSchema,
+    creatorVideoId: z.string().uuid().optional().or(z.literal("")),
     bunnyVideoId: z.string().trim().optional().or(z.literal("")),
     bunnyLibraryId: z.string().trim().optional().or(z.literal("")),
   })
@@ -98,6 +103,7 @@ export const checkoutSchema = z.object({
 
 export const bunnyCreateUploadSchema = z.object({
   title: z.string().trim().max(200).optional(),
+  creatorId: z.string().uuid().optional(),
 });
 
 export const bunnyEmbedTokenSchema = z.object({
@@ -109,6 +115,29 @@ export const commentCreateSchema = z.object({
   postId: z.string().uuid(),
   creatorSlug: z.string().trim().min(1).max(120),
   body: z.string().trim().min(1).max(2000),
+});
+
+export const creatorVideoUpsertSchema = z.object({
+  creatorId: z.string().uuid(),
+  title: z.string().trim().min(1).max(200),
+  bunnyVideoId: z.string().trim().min(1),
+  bunnyLibraryId: z.string().trim().min(1),
+  thumbnailUrl: z.string().url().max(1000).optional().or(z.literal("")),
+});
+
+export const viewerProfileSchema = z.object({
+  username: z.string().trim().min(3).max(40).optional().or(z.literal("")),
+  displayName: z.string().trim().min(1).max(120).optional().or(z.literal("")),
+  avatarUrl: z.string().url().max(1000).optional().or(z.literal("")),
+});
+
+export const analyticsEventSchema = z.object({
+  eventType: z.enum(["post_view", "video_play_intent", "video_play_started"]),
+  creatorId: z.string().uuid(),
+  postId: z.string().uuid().optional(),
+  assetId: z.string().uuid().optional(),
+  sessionId: z.string().trim().max(200).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const stripeEventJobSchema = z.object({
@@ -127,6 +156,14 @@ export const emailSendJobSchema = z.object({
   html: z.string().min(1),
 });
 
+export const analyticsAggregateJobSchema = z.object({
+  creatorId: z.string().uuid(),
+  day: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 export type StripeEventJobPayload = z.infer<typeof stripeEventJobSchema>;
 export type BunnySyncJobPayload = z.infer<typeof bunnySyncJobSchema>;
 export type EmailSendJobPayload = z.infer<typeof emailSendJobSchema>;
+export type AnalyticsAggregateJobPayload = z.infer<typeof analyticsAggregateJobSchema>;

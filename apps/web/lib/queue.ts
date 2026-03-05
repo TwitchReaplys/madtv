@@ -1,7 +1,13 @@
 import { Queue } from "bullmq";
 import Redis from "ioredis";
 
-import { JOB_NAMES, QUEUE_NAMES, bunnySyncJobSchema, stripeEventJobSchema } from "@madtv/shared";
+import {
+  JOB_NAMES,
+  QUEUE_NAMES,
+  analyticsAggregateJobSchema,
+  bunnySyncJobSchema,
+  stripeEventJobSchema,
+} from "@madtv/shared";
 
 const redisUrl = process.env.REDIS_URL;
 
@@ -65,5 +71,16 @@ export async function enqueueBunnySync(assetId: string, videoId: string, library
 
   await getEventsQueue().add(JOB_NAMES.BUNNY_SYNC, payload, {
     jobId: `bunny-sync:${payload.assetId}:${payload.videoId}`,
+  });
+}
+
+export async function enqueueAnalyticsAggregate(creatorId: string, day: string) {
+  const payload = analyticsAggregateJobSchema.parse({
+    creatorId,
+    day,
+  });
+
+  await getEventsQueue().add(JOB_NAMES.ANALYTICS_AGGREGATE, payload, {
+    jobId: `analytics-aggregate:${payload.creatorId}:${payload.day}`,
   });
 }

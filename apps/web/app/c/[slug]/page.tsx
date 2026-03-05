@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CreatorHeader } from "@/components/creator/creator-header";
+import { FeaturedMediaCard } from "@/components/creator/featured-media-card";
 import { LockedPostCard } from "@/components/creator/locked-post-card";
 import { PostCard } from "@/components/creator/post-card";
 import { SubscribeCTA } from "@/components/creator/subscribe-cta";
@@ -24,7 +25,9 @@ async function getCreatorBySlug(slug: string) {
 
   return supabase
     .from("creators")
-    .select("id, slug, title, tagline, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, social_links")
+    .select(
+      "id, slug, title, tagline, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, social_links, featured_media_type, featured_video_id, featured_thumbnail_url, featured_image_url",
+    )
     .eq("slug", slug)
     .maybeSingle();
 }
@@ -128,6 +131,21 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         avatarUrl={creator.avatar_url}
         socialLinks={socialLinks}
         ownerView={isOwner}
+      />
+
+      <FeaturedMediaCard
+        creatorId={creator.id}
+        creatorTitle={creator.title}
+        mediaType={
+          creator.featured_media_type === "bunny_video" || creator.featured_media_type === "image"
+            ? creator.featured_media_type
+            : "none"
+        }
+        featuredVideoId={creator.featured_video_id}
+        featuredThumbnailUrl={creator.featured_thumbnail_url}
+        featuredImageUrl={creator.featured_image_url}
+        coverImageUrl={creator.cover_image_url}
+        libraryId={process.env.BUNNY_STREAM_LIBRARY_ID ?? ""}
       />
 
       <div className="space-y-3">

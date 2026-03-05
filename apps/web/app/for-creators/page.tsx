@@ -35,7 +35,7 @@ export default async function ForCreatorsPage() {
             Nastav členství, publikuj videa a buduj komunitu. My řešíme přístup a platby.
           </p>
           <Button asChild size="lg">
-            <Link href={user ? "/dashboard" : "/login"}>Začít tvořit</Link>
+            <Link href={user ? "/dashboard/creator" : "/login?next=/dashboard/creator"}>Začít tvořit</Link>
           </Button>
         </div>
       </section>

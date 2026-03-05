@@ -87,6 +87,7 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
                     </Link>
                     <form action={deletePostAction}>
                       <input type="hidden" name="postId" value={post.id} />
+                      <input type="hidden" name="returnPath" value="/dashboard/posts" />
                       <button
                         type="submit"
                         className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"

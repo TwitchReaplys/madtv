@@ -1,5 +1,7 @@
 export {
+  analyticsEventSchema,
   commentCreateSchema,
+  creatorVideoUpsertSchema,
   bunnyCreateUploadSchema,
   bunnyEmbedTokenSchema,
   checkoutSchema,
@@ -9,4 +11,5 @@ export {
   tierCreateSchema,
   tierDeleteSchema,
   tierToggleSchema,
+  viewerProfileSchema,
 } from "@madtv/shared";

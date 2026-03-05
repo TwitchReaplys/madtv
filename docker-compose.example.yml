@@ -32,6 +32,7 @@ services:
       - apps/worker/.env.example
     environment:
       - REDIS_URL=redis://redis:6379
+      - WORKER_SERVICE_NAME=worker
     depends_on:
       - redis
 

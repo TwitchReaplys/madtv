@@ -3,23 +3,16 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireUser } from "@/lib/auth";
+import { requireDashboardUser } from "@/lib/portal";
 
 export const dynamic = "force-dynamic";
-
-const NAV_LINKS = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/creator", label: "Creator" },
-  { href: "/dashboard/tiers", label: "Tiers" },
-  { href: "/dashboard/posts", label: "Posts" },
-];
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireUser();
+  const { user, hasCreatorAccess, hasViewerAccess, isPlatformAdmin } = await requireDashboardUser();
 
   return (
     <div className="space-y-6">
@@ -28,22 +21,50 @@ export default async function DashboardLayout({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">Signed in as {user.email}</p>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">{user.email}</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">Creator panel</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              {hasViewerAccess ? <Badge variant="secondary">Viewer</Badge> : null}
+              {hasCreatorAccess ? <Badge variant="secondary">Creator</Badge> : null}
+              {isPlatformAdmin ? <Badge variant="secondary">Platform Admin</Badge> : null}
               <Button asChild variant="outline" size="sm">
-                <a href="/logout">Logout</a>
+                <Link href="/logout">Odhlásit se</Link>
               </Button>
             </div>
           </div>
 
-          <nav className="flex flex-wrap gap-2">
-            {NAV_LINKS.map((item) => (
-              <Button key={item.href} asChild variant="secondary" size="sm">
-                <Link href={item.href}>{item.label}</Link>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/dashboard/viewer">Viewer portal</Link>
+            </Button>
+            {hasCreatorAccess ? (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/dashboard/creator">Creator portal</Link>
               </Button>
-            ))}
+            ) : null}
+            {isPlatformAdmin ? (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/admin">Admin</Link>
+              </Button>
+            ) : null}
+          </div>
+
+          <nav className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/viewer">Overview</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/viewer/subscriptions">Subscriptions</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/viewer/profile">Profile</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/viewer/billing">Billing</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/explore">Explore</Link>
+            </Button>
           </nav>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildBunnyEmbedUrl, sha256Hex } from "@/lib/bunny";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { bunnyCreateUploadSchema } from "@/lib/validators/schemas";
 
 export const runtime = "nodejs";
@@ -50,6 +51,37 @@ export async function POST(request: Request) {
 
   const expirationTime = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
   const signature = sha256Hex(`${libraryId}${apiKey}${expirationTime}${videoId}`);
+
+  if (parsed.data.creatorId) {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: isAdmin } = await supabase.rpc("is_creator_admin", {
+        p_creator_id: parsed.data.creatorId,
+      });
+
+      if (isAdmin) {
+        await supabase.from("creator_videos").upsert(
+          {
+            creator_id: parsed.data.creatorId,
+            title,
+            bunny_video_id: videoId,
+            status: "uploading",
+            meta: {
+              bunny_library_id: libraryId,
+              created_via: "create-upload-route",
+            },
+          },
+          {
+            onConflict: "bunny_video_id",
+          },
+        );
+      }
+    }
+  }
 
   return NextResponse.json({
     videoId,

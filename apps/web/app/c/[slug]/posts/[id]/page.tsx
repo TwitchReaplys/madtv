@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AnalyticsBeacon } from "@/components/analytics-beacon";
 import { createCommentAction } from "@/lib/actions/public";
 import { PaywallPanel } from "@/components/creator/paywall-panel";
 import type { PublicTier } from "@/components/creator/tier-cards";
@@ -165,6 +166,12 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
 
   return (
     <div className="space-y-6" style={creatorStyle}>
+      <AnalyticsBeacon
+        eventType="post_view"
+        creatorId={detail.creator_id}
+        postId={detail.post_id}
+        meta={{ surface: "post_detail" }}
+      />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href={`/c/${slug}`} className="text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-300">
           ← Zpět na profil tvůrce

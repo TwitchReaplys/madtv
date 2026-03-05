@@ -5,6 +5,7 @@ import * as tus from "tus-js-client";
 
 type BunnyUploaderProps = {
   title?: string;
+  creatorId?: string;
   videoIdInputName?: string;
   libraryIdInputName?: string;
   initialVideoId?: string | null;
@@ -20,6 +21,7 @@ type CreateUploadResponse = {
 
 export function BunnyUploader({
   title = "Video",
+  creatorId,
   videoIdInputName = "bunnyVideoId",
   libraryIdInputName = "bunnyLibraryId",
   initialVideoId,
@@ -45,7 +47,7 @@ export function BunnyUploader({
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ title: file.name }),
+      body: JSON.stringify({ title: file.name, creatorId }),
     });
 
     const createPayload = (await createResponse.json()) as

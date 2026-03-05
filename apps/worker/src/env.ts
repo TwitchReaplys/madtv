@@ -15,4 +15,5 @@ export const env = {
   redisUrl: getRequiredEnv("REDIS_URL"),
   bunnyStreamApiKey: process.env.BUNNY_STREAM_API_KEY ?? "",
   bunnyStreamLibraryId: process.env.BUNNY_STREAM_LIBRARY_ID ?? "",
+  workerServiceName: process.env.WORKER_SERVICE_NAME ?? "worker",
 };

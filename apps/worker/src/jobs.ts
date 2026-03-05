@@ -1,7 +1,14 @@
-import { JOB_NAMES, bunnySyncJobSchema, emailSendJobSchema, stripeEventJobSchema } from "@madtv/shared";
+import {
+  JOB_NAMES,
+  analyticsAggregateJobSchema,
+  bunnySyncJobSchema,
+  emailSendJobSchema,
+  stripeEventJobSchema,
+} from "@madtv/shared";
 import type { Job } from "bullmq";
 import type Stripe from "stripe";
 
+import { env } from "./env.js";
 import { logger } from "./logger.js";
 import { stripe } from "./stripe.js";
 import { supabase } from "./supabase.js";
@@ -98,6 +105,8 @@ async function upsertSubscriptionFromStripe(
   if (error) {
     throw new Error(`Failed to upsert subscription ${subscription.id}: ${error.message}`);
   }
+
+  await recomputeAnalyticsForCreatorDay(creatorId, new Date().toISOString().slice(0, 10));
 }
 
 async function processStripeEvent(eventId: string) {
@@ -161,18 +170,64 @@ async function processStripeEvent(eventId: string) {
 
 async function processBunnySync(job: Job) {
   const payload = bunnySyncJobSchema.parse(job.data);
-  logger.info({ payload }, "Running bunny:sync (stub)");
+  logger.info({ payload }, "Running bunny:sync");
 
-  // Optional job stub: fetch Bunny metadata and store into post_assets.meta
-  const meta = {
+  let videoMeta: Record<string, unknown> = {
     syncedAt: new Date().toISOString(),
-    status: "stub",
-    note: "Implement Bunny API fetch here",
   };
+  let status: "uploading" | "processing" | "ready" | "error" = "processing";
+  let durationSeconds: number | null = null;
+  let thumbnailUrl: string | null = null;
+
+  if (env.bunnyStreamApiKey) {
+    const response = await fetch(`https://video.bunnycdn.com/library/${payload.libraryId}/videos/${payload.videoId}`, {
+      headers: {
+        AccessKey: env.bunnyStreamApiKey,
+      },
+    });
+
+    if (response.ok) {
+      const bunnyPayload = (await response.json()) as {
+        status?: number;
+        length?: number;
+        thumbnailFileName?: string;
+        [key: string]: unknown;
+      };
+
+      videoMeta = {
+        ...videoMeta,
+        bunny: bunnyPayload,
+      };
+
+      if (typeof bunnyPayload.length === "number") {
+        durationSeconds = Math.max(0, Math.round(bunnyPayload.length));
+      }
+
+      if (
+        typeof bunnyPayload.thumbnailFileName === "string" &&
+        bunnyPayload.thumbnailFileName.length > 0 &&
+        bunnyPayload.thumbnailFileName.startsWith("http")
+      ) {
+        thumbnailUrl = bunnyPayload.thumbnailFileName;
+      }
+
+      if (bunnyPayload.status === 4 || bunnyPayload.status === 5) {
+        status = "ready";
+      } else {
+        status = "processing";
+      }
+    } else {
+      status = "error";
+      videoMeta = {
+        ...videoMeta,
+        bunnyError: await response.text(),
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("post_assets")
-    .update({ meta })
+    .update({ meta: videoMeta })
     .eq("id", payload.assetId)
     .eq("bunny_video_id", payload.videoId)
     .eq("bunny_library_id", payload.libraryId);
@@ -180,6 +235,141 @@ async function processBunnySync(job: Job) {
   if (error) {
     throw new Error(`Failed bunny sync update for asset ${payload.assetId}: ${error.message}`);
   }
+
+  const { error: creatorVideoError } = await supabase
+    .from("creator_videos")
+    .update({
+      status,
+      duration_seconds: durationSeconds,
+      thumbnail_url: thumbnailUrl,
+      meta: videoMeta,
+    })
+    .eq("bunny_video_id", payload.videoId);
+
+  if (creatorVideoError) {
+    throw new Error(`Failed creator_videos sync for bunny id ${payload.videoId}: ${creatorVideoError.message}`);
+  }
+}
+
+async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
+  const start = new Date(`${day}T00:00:00.000Z`);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+
+  const [{ data: events, error: eventsError }, { data: feeSetting }] = await Promise.all([
+    supabase
+      .from("analytics_events")
+      .select("event_type, user_id, session_id")
+      .eq("creator_id", creatorId)
+      .gte("created_at", start.toISOString())
+      .lt("created_at", end.toISOString()),
+    supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("key", "platform_fee_percent")
+      .maybeSingle(),
+  ]);
+
+  if (eventsError) {
+    throw new Error(`Failed to load analytics events: ${eventsError.message}`);
+  }
+
+  const rows = events ?? [];
+  const postViews = rows.filter((row) => row.event_type === "post_view").length;
+  const videoPlayIntents = rows.filter((row) => row.event_type === "video_play_intent").length;
+  const videoPlayStarted = rows.filter((row) => row.event_type === "video_play_started").length;
+  const uniqueViewers = new Set(
+    rows
+      .map((row) => row.user_id ?? (row.session_id ? `session:${row.session_id}` : null))
+      .filter((value): value is string => Boolean(value)),
+  ).size;
+
+  const feePercentRaw =
+    feeSetting?.value && typeof feeSetting.value === "number"
+      ? feeSetting.value
+      : feeSetting?.value &&
+          typeof feeSetting.value === "object" &&
+          feeSetting.value !== null &&
+          "value" in feeSetting.value &&
+          typeof feeSetting.value.value === "number"
+        ? feeSetting.value.value
+        : 10;
+
+  const feePercent = Number.isFinite(feePercentRaw) ? Number(feePercentRaw) : 10;
+
+  const { data: invoiceRows, error: invoiceRowsError } = await supabase
+    .from("stripe_events")
+    .select("payload")
+    .eq("type", "invoice.paid")
+    .gte("created_at", start.toISOString())
+    .lt("created_at", end.toISOString());
+
+  if (invoiceRowsError) {
+    throw new Error(`Failed to load invoice events: ${invoiceRowsError.message}`);
+  }
+
+  let grossRevenueCents = 0;
+
+  for (const eventRow of invoiceRows ?? []) {
+    const payloadJson = eventRow.payload as {
+      data?: {
+        object?: {
+          amount_paid?: number;
+          lines?: {
+            data?: Array<{
+              price?: {
+                id?: string;
+              };
+            }>;
+          };
+        };
+      };
+    };
+
+    const priceId = payloadJson.data?.object?.lines?.data?.[0]?.price?.id ?? null;
+    const amountPaid = Number(payloadJson.data?.object?.amount_paid ?? 0);
+
+    if (!priceId || amountPaid <= 0) {
+      continue;
+    }
+
+    const { data: tier } = await supabase
+      .from("tiers")
+      .select("creator_id")
+      .eq("stripe_price_id", priceId)
+      .maybeSingle();
+
+    if (tier?.creator_id === creatorId) {
+      grossRevenueCents += Math.round(amountPaid);
+    }
+  }
+
+  const netRevenueCents = Math.max(0, Math.round(grossRevenueCents - grossRevenueCents * (feePercent / 100)));
+
+  const { error: upsertError } = await supabase.from("analytics_daily_creator").upsert(
+    {
+      creator_id: creatorId,
+      date: day,
+      post_views: postViews,
+      video_play_intents: videoPlayIntents,
+      video_play_started: videoPlayStarted,
+      unique_viewers: uniqueViewers,
+      gross_revenue_cents: grossRevenueCents,
+      net_revenue_cents: netRevenueCents,
+    },
+    {
+      onConflict: "creator_id,date",
+    },
+  );
+
+  if (upsertError) {
+    throw new Error(`Failed to upsert analytics daily row: ${upsertError.message}`);
+  }
+}
+
+async function processAnalyticsAggregate(job: Job) {
+  const payload = analyticsAggregateJobSchema.parse(job.data);
+  await recomputeAnalyticsForCreatorDay(payload.creatorId, payload.day);
 }
 
 async function processEmailSend(job: Job) {
@@ -200,6 +390,10 @@ export async function processJob(job: Job) {
 
     case JOB_NAMES.BUNNY_SYNC:
       await processBunnySync(job);
+      break;
+
+    case JOB_NAMES.ANALYTICS_AGGREGATE:
+      await processAnalyticsAggregate(job);
       break;
 
     case JOB_NAMES.EMAIL_SEND:
