@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { openStripeConnectDashboardAction } from "@/lib/actions/dashboard";
 import { requireCreatorAccess } from "@/lib/portal";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,11 @@ export default async function CreatorSectionLayout({ children, params }: LayoutP
             <Button asChild size="sm" variant="outline">
               <Link href={`/dashboard/creator/${creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>
             </Button>
+            <form action={openStripeConnectDashboardAction}>
+              <input type="hidden" name="creatorId" value={creatorId} />
+              <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/onboarding`} />
+              <Button size="sm" variant="secondary" type="submit">Stripe Dashboard</Button>
+            </form>
             <Button asChild size="sm" variant="outline">
               <Link href={`/dashboard/creator/${creatorId}/profile`}>Profile</Link>
             </Button>

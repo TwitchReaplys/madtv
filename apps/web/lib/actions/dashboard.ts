@@ -82,14 +82,38 @@ function getAppBaseUrl() {
   return process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "") ?? "";
 }
 
+function resolveAppUrl(template: string, creatorId: string) {
+  const value = template.includes("{creatorId}")
+    ? template.replace("{creatorId}", creatorId)
+    : template;
+
+  if (value.startsWith("https://") || value.startsWith("http://")) {
+    return value;
+  }
+
+  if (isSafeAppPath(value)) {
+    const appBaseUrl = getAppBaseUrl();
+
+    if (!appBaseUrl) {
+      return null;
+    }
+
+    return `${appBaseUrl}${value}`;
+  }
+
+  return null;
+}
+
 function buildStripeConnectCallbackUrl(creatorId: string, mode: "refresh" | "return") {
   const envKey = mode === "refresh" ? "STRIPE_CONNECT_REFRESH_URL" : "STRIPE_CONNECT_RETURN_URL";
   const envTemplate = process.env[envKey]?.trim();
 
   if (envTemplate) {
-    return envTemplate.includes("{creatorId}")
-      ? envTemplate.replace("{creatorId}", creatorId)
-      : envTemplate;
+    const resolvedUrl = resolveAppUrl(envTemplate, creatorId);
+
+    if (resolvedUrl) {
+      return resolvedUrl;
+    }
   }
 
   const appBaseUrl = getAppBaseUrl();
@@ -557,6 +581,54 @@ export async function startStripeConnectOnboardingAction(formData: FormData) {
   }
 
   redirect(accountLink.url);
+}
+
+export async function openStripeConnectDashboardAction(formData: FormData) {
+  const parsed = creatorStripeConnectSchema.safeParse({
+    creatorId: getTextValue(formData, "creatorId"),
+  });
+
+  const creatorIdForPath = typeof formData.get("creatorId") === "string" ? String(formData.get("creatorId")) : "";
+  const fallbackPath = creatorIdForPath
+    ? `/dashboard/creator/${creatorIdForPath}/onboarding`
+    : "/dashboard/creator";
+  const returnPath = getReturnPath(formData, fallbackPath);
+
+  if (!parsed.success) {
+    redirectWithMessage(returnPath, "error", parsed.error.issues[0]?.message ?? "Invalid creator id");
+  }
+
+  const { supabase } = await requireUser();
+  const isAdmin = await isCreatorAdmin(supabase, parsed.data.creatorId);
+
+  if (!isAdmin) {
+    redirectWithMessage(returnPath, "error", "You are not allowed to open Stripe dashboard for this creator");
+  }
+
+  const { data: creator, error: creatorError } = await supabase
+    .from("creators")
+    .select("id, stripe_connect_account_id")
+    .eq("id", parsed.data.creatorId)
+    .single();
+
+  if (creatorError || !creator) {
+    redirectWithMessage(returnPath, "error", creatorError?.message ?? "Creator not found");
+  }
+
+  if (!creator.stripe_connect_account_id) {
+    redirectWithMessage(returnPath, "error", "Stripe Connect account is not linked yet");
+  }
+
+  const stripe = getStripeClient();
+
+  try {
+    const loginLink = await stripe.accounts.createLoginLink(creator.stripe_connect_account_id);
+
+    redirect(loginLink.url);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to open Stripe dashboard";
+    redirectWithMessage(returnPath, "error", message);
+  }
 }
 
 export async function createTierAction(formData: FormData) {

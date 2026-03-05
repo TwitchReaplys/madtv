@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Notice } from "@/components/notice";
 import {
+  openStripeConnectDashboardAction,
   refreshStripeConnectStatusAction,
   startStripeConnectOnboardingAction,
   upsertCreatorOnboardingAction,
@@ -229,6 +230,14 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
               <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/onboarding`} />
               <Button type="submit" variant="outline">Zkontrolovat Stripe stav</Button>
             </form>
+
+            {creator.stripe_connect_account_id ? (
+              <form action={openStripeConnectDashboardAction}>
+                <input type="hidden" name="creatorId" value={creatorId} />
+                <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/onboarding`} />
+                <Button type="submit" variant="secondary">Otevřít Stripe dashboard</Button>
+              </form>
+            ) : null}
           </div>
         </CardContent>
       </Card>
