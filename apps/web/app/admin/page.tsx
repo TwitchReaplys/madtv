@@ -18,7 +18,7 @@ export default async function AdminOverviewPage() {
     supabase.from("creators").select("id", { head: true, count: "exact" }),
     supabase
       .from("subscriptions")
-      .select("id, tiers:tier_id ( price_cents, currency )", { count: "exact" })
+      .select("id, tiers:tier_id ( price_cents, currency, creators:creator_id ( platform_fee_percent ) )", { count: "exact" })
       .in("status", ["active", "trialing"]),
     supabase
       .from("subscriptions")
@@ -26,27 +26,49 @@ export default async function AdminOverviewPage() {
       .in("status", ["active", "trialing"]),
   ]);
 
-  const gross = (activeSubs ?? []).reduce((sum, row) => {
-    const relation = row.tiers as
-      | { price_cents?: number; currency?: string }
-      | { price_cents?: number; currency?: string }[]
-      | null;
-    const tier = Array.isArray(relation) ? relation[0] : relation;
-    return sum + Number(tier?.price_cents ?? 0);
-  }, 0);
+  const financials = (activeSubs ?? []).reduce(
+    (acc, row) => {
+      const relation = row.tiers as
+        | {
+            price_cents?: number;
+            currency?: string;
+            creators?:
+              | {
+                  platform_fee_percent?: number | string | null;
+                }
+              | {
+                  platform_fee_percent?: number | string | null;
+                }[]
+              | null;
+          }
+        | {
+            price_cents?: number;
+            currency?: string;
+            creators?:
+              | {
+                  platform_fee_percent?: number | string | null;
+                }
+              | {
+                  platform_fee_percent?: number | string | null;
+                }[]
+              | null;
+          }[]
+        | null;
+      const tier = Array.isArray(relation) ? relation[0] : relation;
+      const priceCents = Number(tier?.price_cents ?? 0);
+      const creatorRelation = tier?.creators;
+      const creator = Array.isArray(creatorRelation) ? creatorRelation[0] : creatorRelation;
+      const rawFee = creator?.platform_fee_percent;
+      const parsedFee = typeof rawFee === "string" ? Number(rawFee) : Number(rawFee ?? 10);
+      const feePercent = Number.isFinite(parsedFee) ? Math.min(100, Math.max(0, parsedFee)) : 10;
 
-  let feePercent = 10;
-  const { data: feeRow } = await supabase
-    .from("platform_settings")
-    .select("value")
-    .eq("key", "platform_fee_percent")
-    .maybeSingle();
+      acc.gross += priceCents;
+      acc.net += Math.max(0, Math.round(priceCents - priceCents * (feePercent / 100)));
 
-  if (typeof feeRow?.value === "number") {
-    feePercent = feeRow.value;
-  }
-
-  const net = Math.max(0, Math.round(gross - gross * (feePercent / 100)));
+      return acc;
+    },
+    { gross: 0, net: 0 },
+  );
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -72,7 +94,7 @@ export default async function AdminOverviewPage() {
         </CardHeader>
         <CardContent>
           <p className="text-xl font-bold">
-            {toCurrency(gross)} / {toCurrency(net)}
+            {toCurrency(financials.gross)} / {toCurrency(financials.net)}
           </p>
         </CardContent>
       </Card>

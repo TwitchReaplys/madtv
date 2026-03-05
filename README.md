@@ -133,6 +133,7 @@ Add-on migration:
 - `supabase/migrations/20260305170000_portals_analytics_admin.sql`
 - `supabase/migrations/20260305203000_creator_onboarding_stripe_connect.sql`
 - `supabase/migrations/20260305213000_fix_creator_status_visibility.sql`
+- `supabase/migrations/20260305224500_creator_fee_percent.sql`
 
 Added fields:
 - `creators.accent_color`
@@ -164,6 +165,7 @@ Added fields:
 - `creators.stripe_connect_charges_enabled`
 - `creators.stripe_connect_payouts_enabled`
 - `creators.stripe_connect_details_submitted`
+- `creators.platform_fee_percent` (default `10`, editable per creator by platform admin)
 - `post_assets.meta`
 - `post_assets.creator_video_id`
 
@@ -214,6 +216,7 @@ psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305130000_explore_and_commen
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305170000_portals_analytics_admin.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305203000_creator_onboarding_stripe_connect.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305213000_fix_creator_status_visibility.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305224500_creator_fee_percent.sql
 ```
 
 Run web:

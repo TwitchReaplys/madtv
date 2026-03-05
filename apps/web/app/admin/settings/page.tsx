@@ -45,7 +45,7 @@ export default async function AdminSettingsPage({ searchParams }: PageProps) {
 
         <form action={updatePlatformSettingsAction} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Platform fee percent</label>
+            <label className="mb-1 block text-sm font-medium">Platform default fee percent</label>
             <input
               type="number"
               name="platformFeePercent"
@@ -55,6 +55,9 @@ export default async function AdminSettingsPage({ searchParams }: PageProps) {
               defaultValue={feePercent}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
             />
+            <p className="mt-1 text-xs text-zinc-500">
+              Použije se jako fallback. Primární fee se nastavuje per tvůrce v Admin → Creators.
+            </p>
           </div>
 
           <div>

@@ -256,13 +256,18 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
 
-  const [{ data: events, error: eventsError }, { data: feeSetting }] = await Promise.all([
+  const [{ data: events, error: eventsError }, { data: creatorRow }, { data: feeSetting }] = await Promise.all([
     supabase
       .from("analytics_events")
       .select("event_type, user_id, session_id")
       .eq("creator_id", creatorId)
       .gte("created_at", start.toISOString())
       .lt("created_at", end.toISOString()),
+    supabase
+      .from("creators")
+      .select("platform_fee_percent")
+      .eq("id", creatorId)
+      .maybeSingle(),
     supabase
       .from("platform_settings")
       .select("value")
@@ -284,7 +289,7 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
       .filter((value): value is string => Boolean(value)),
   ).size;
 
-  const feePercentRaw =
+  const defaultFeePercentRaw =
     feeSetting?.value && typeof feeSetting.value === "number"
       ? feeSetting.value
       : feeSetting?.value &&
@@ -295,7 +300,16 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
         ? feeSetting.value.value
         : 10;
 
-  const feePercent = Number.isFinite(feePercentRaw) ? Number(feePercentRaw) : 10;
+  const creatorFeePercentRaw =
+    typeof creatorRow?.platform_fee_percent === "number"
+      ? creatorRow.platform_fee_percent
+      : typeof creatorRow?.platform_fee_percent === "string"
+        ? Number(creatorRow.platform_fee_percent)
+        : null;
+
+  const defaultFeePercent = Number.isFinite(defaultFeePercentRaw) ? Number(defaultFeePercentRaw) : 10;
+  const effectiveFeePercent = Number.isFinite(creatorFeePercentRaw) ? Number(creatorFeePercentRaw) : defaultFeePercent;
+  const feePercent = Math.min(100, Math.max(0, effectiveFeePercent));
 
   const { data: invoiceRows, error: invoiceRowsError } = await supabase
     .from("stripe_events")

@@ -1,5 +1,5 @@
 import { Notice } from "@/components/notice";
-import { toggleCreatorFeaturedAction, updateCreatorStatusAction } from "@/lib/actions/admin";
+import { toggleCreatorFeaturedAction, updateCreatorFeeAction, updateCreatorStatusAction } from "@/lib/actions/admin";
 import { requirePlatformAdmin } from "@/lib/portal";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function AdminCreatorsPage({ searchParams }: PageProps) {
   const { supabase } = await requirePlatformAdmin();
   const { data: creators } = await supabase
     .from("creators")
-    .select("id, slug, title, status, is_featured, created_at")
+    .select("id, slug, title, status, platform_fee_percent, is_featured, created_at")
     .order("created_at", { ascending: false });
 
   return (
@@ -52,7 +52,31 @@ export default async function AdminCreatorsPage({ searchParams }: PageProps) {
               </form>
             </div>
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-xs text-zinc-500">Featured: {creator.is_featured ? "yes" : "no"}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-zinc-500">Featured: {creator.is_featured ? "yes" : "no"}</p>
+                <form action={updateCreatorFeeAction} className="flex items-center gap-2">
+                  <input type="hidden" name="creatorId" value={creator.id} />
+                  <label className="text-xs text-zinc-500" htmlFor={`fee-${creator.id}`}>
+                    Fee %
+                  </label>
+                  <input
+                    id={`fee-${creator.id}`}
+                    type="number"
+                    name="platformFeePercent"
+                    min={0}
+                    max={100}
+                    step="0.1"
+                    defaultValue={Number(creator.platform_fee_percent ?? 10)}
+                    className="w-20 rounded-md border border-zinc-300 px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-900"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    Save fee
+                  </button>
+                </form>
+              </div>
               <form action={toggleCreatorFeaturedAction}>
                 <input type="hidden" name="creatorId" value={creator.id} />
                 <input type="hidden" name="nextFeatured" value={creator.is_featured ? "false" : "true"} />

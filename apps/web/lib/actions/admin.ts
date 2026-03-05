@@ -127,6 +127,36 @@ export async function updateCreatorStatusAction(formData: FormData) {
   redirect("/admin/creators?success=Creator+updated");
 }
 
+export async function updateCreatorFeeAction(formData: FormData) {
+  const schema = z.object({
+    creatorId: z.string().uuid(),
+    platformFeePercent: z.coerce.number().min(0).max(100),
+  });
+
+  const parsed = schema.safeParse({
+    creatorId: formData.get("creatorId"),
+    platformFeePercent: formData.get("platformFeePercent"),
+  });
+
+  if (!parsed.success) {
+    redirect("/admin/creators?error=Invalid+fee+payload");
+  }
+
+  const { supabase } = await requirePlatformAdminForMutation();
+  const { error } = await supabase
+    .from("creators")
+    .update({ platform_fee_percent: parsed.data.platformFeePercent })
+    .eq("id", parsed.data.creatorId);
+
+  if (error) {
+    redirect(`/admin/creators?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/admin/creators");
+  redirect("/admin/creators?success=Creator+fee+updated");
+}
+
 export async function toggleCreatorFeaturedAction(formData: FormData) {
   const schema = z.object({
     creatorId: z.string().uuid(),
