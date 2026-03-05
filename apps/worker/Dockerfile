@@ -17,4 +17,4 @@ COPY packages/shared ./packages/shared
 
 ENV NODE_ENV=production
 
-CMD ["node_modules/.bin/tsx", "apps/worker/src/index.ts"]
+CMD ["pnpm", "--filter", "@madtv/worker", "start"]
