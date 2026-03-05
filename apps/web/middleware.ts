@@ -2,9 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { getAuthUser } from "@/lib/supabase/auth";
-import { assertSupabasePublicEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/shared";
-
-const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+import { assertSupabasePublicEnv, buildSupabaseCookieOptions, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/shared";
 
 function isProtectedPath(pathname: string) {
   return pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
@@ -16,6 +14,8 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });
+
+  const forwardedProto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol;
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -36,12 +36,9 @@ export async function middleware(request: NextRequest) {
         });
       },
     },
-    cookieOptions: {
-      path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: COOKIE_MAX_AGE_SECONDS,
-    },
+    cookieOptions: buildSupabaseCookieOptions({
+      requestProtocol: forwardedProto,
+    }),
   });
 
   const { user } = await getAuthUser(supabase);

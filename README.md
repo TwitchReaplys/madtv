@@ -169,6 +169,9 @@ These functions expose teaser data while full content remains RLS-protected.
 
 Web env template:
 - `apps/web/.env.example`
+  - optional: `NEXT_PUBLIC_SUPABASE_COOKIE_SECURE=true|false`
+    - leave empty to auto-detect from `NEXT_PUBLIC_APP_URL` / request protocol
+    - set `false` only if you run app over plain HTTP
 
 Worker env template:
 - `apps/worker/.env.example`
