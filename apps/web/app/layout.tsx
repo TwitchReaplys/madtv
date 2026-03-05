@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AccountMenu } from "@/components/account-menu";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import "./globals.css";
@@ -34,8 +35,8 @@ export default async function RootLayout({
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const supabase = await createServerSupabaseClient();
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
+      const { user: authUser } = await getAuthUser(supabase);
+      user = authUser;
     } catch {
       user = null;
     }

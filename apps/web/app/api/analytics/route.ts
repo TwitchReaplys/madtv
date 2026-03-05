@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { enqueueAnalyticsAggregate } from "@/lib/queue";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { analyticsEventSchema } from "@/lib/validators/schemas";
 
@@ -27,9 +28,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   const sessionId = parsed.data.sessionId?.trim()
     ? createHash("sha256").update(parsed.data.sessionId.trim()).digest("hex")

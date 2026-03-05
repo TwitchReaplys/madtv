@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 import { enqueueBunnySync } from "@/lib/queue";
@@ -69,9 +70,7 @@ function buildCreatorSocialLinks(input: {
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   if (!user) {
     redirect("/login");

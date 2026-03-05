@@ -11,6 +11,7 @@ import { SubscribeCTA } from "@/components/creator/subscribe-cta";
 import { TierCards, type PublicTier } from "@/components/creator/tier-cards";
 import { Notice } from "@/components/notice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -66,9 +67,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
 
   const supabase = await createServerSupabaseClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   const { data: creator, error: creatorError } = await getCreatorBySlug(slug);
 

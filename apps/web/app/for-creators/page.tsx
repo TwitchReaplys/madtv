@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +19,8 @@ export default async function ForCreatorsPage() {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const supabase = await createServerSupabaseClient();
-      const { data } = await supabase.auth.getUser();
-      user = data.user;
+      const { user: authUser } = await getAuthUser(supabase);
+      user = authUser;
     } catch {
       user = null;
     }

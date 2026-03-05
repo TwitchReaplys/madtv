@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type CreatorAccess = {
@@ -12,9 +13,7 @@ export type CreatorAccess = {
 
 export async function requireDashboardUser() {
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   if (!user) {
     redirect("/login");

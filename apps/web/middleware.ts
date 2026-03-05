@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getAuthUser } from "@/lib/supabase/auth";
 import { assertSupabasePublicEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/shared";
 
 export async function middleware(request: NextRequest) {
@@ -31,9 +32,7 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   if (!user && (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/admin"))) {
     const url = request.nextUrl.clone();

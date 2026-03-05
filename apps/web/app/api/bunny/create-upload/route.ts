@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { buildBunnyEmbedUrl, sha256Hex } from "@/lib/bunny";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { bunnyCreateUploadSchema } from "@/lib/validators/schemas";
 
@@ -54,9 +55,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.creatorId) {
     const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await getAuthUser(supabase);
 
     if (user) {
       const { data: isAdmin } = await supabase.rpc("is_creator_admin", {

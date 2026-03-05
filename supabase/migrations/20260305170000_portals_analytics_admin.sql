@@ -219,6 +219,11 @@ using (
   or public.is_platform_admin()
 );
 
+drop policy if exists "creator_videos_select_admin" on public.creator_videos;
+drop policy if exists "creator_videos_insert_admin" on public.creator_videos;
+drop policy if exists "creator_videos_update_admin" on public.creator_videos;
+drop policy if exists "creator_videos_delete_admin" on public.creator_videos;
+
 create policy "creator_videos_select_admin" on public.creator_videos
 for select
 using (public.is_creator_admin(creator_id) or public.is_platform_admin());
@@ -236,13 +241,20 @@ create policy "creator_videos_delete_admin" on public.creator_videos
 for delete
 using (public.is_creator_admin(creator_id) or public.is_platform_admin());
 
+drop policy if exists "analytics_events_select_creator_admin_or_platform_admin" on public.analytics_events;
 create policy "analytics_events_select_creator_admin_or_platform_admin" on public.analytics_events
 for select
 using (public.is_creator_admin(creator_id) or public.is_platform_admin());
 
+drop policy if exists "analytics_daily_creator_select_creator_admin_or_platform_admin" on public.analytics_daily_creator;
 create policy "analytics_daily_creator_select_creator_admin_or_platform_admin" on public.analytics_daily_creator
 for select
 using (public.is_creator_admin(creator_id) or public.is_platform_admin());
+
+drop policy if exists "platform_admins_select_self_or_admin" on public.platform_admins;
+drop policy if exists "platform_admins_insert_super_admin" on public.platform_admins;
+drop policy if exists "platform_admins_update_super_admin" on public.platform_admins;
+drop policy if exists "platform_admins_delete_super_admin" on public.platform_admins;
 
 create policy "platform_admins_select_self_or_admin" on public.platform_admins
 for select
@@ -261,6 +273,11 @@ create policy "platform_admins_delete_super_admin" on public.platform_admins
 for delete
 using (public.is_platform_super_admin());
 
+drop policy if exists "platform_settings_select_admin" on public.platform_settings;
+drop policy if exists "platform_settings_insert_super_admin" on public.platform_settings;
+drop policy if exists "platform_settings_update_super_admin" on public.platform_settings;
+drop policy if exists "platform_settings_delete_super_admin" on public.platform_settings;
+
 create policy "platform_settings_select_admin" on public.platform_settings
 for select
 using (public.is_platform_admin());
@@ -278,24 +295,30 @@ create policy "platform_settings_delete_super_admin" on public.platform_settings
 for delete
 using (public.is_platform_super_admin());
 
+drop policy if exists "service_status_select_platform_admin" on public.service_status;
 create policy "service_status_select_platform_admin" on public.service_status
 for select
 using (public.is_platform_admin());
 
+drop policy if exists "profiles_select_platform_admin" on public.profiles;
 create policy "profiles_select_platform_admin" on public.profiles
 for select
 using (public.is_platform_admin());
 
+drop policy if exists "profiles_update_platform_admin" on public.profiles;
 create policy "profiles_update_platform_admin" on public.profiles
 for update
 using (public.is_platform_admin())
 with check (public.is_platform_admin());
 
+drop policy if exists "subscriptions_select_platform_admin" on public.subscriptions;
 create policy "subscriptions_select_platform_admin" on public.subscriptions
 for select
 using (public.is_platform_admin());
 
-create or replace view public.creator_explore
+drop view if exists public.creator_explore;
+
+create view public.creator_explore
 with (security_invoker = true)
 as
 select
@@ -329,3 +352,5 @@ left join lateral (
   order by t.price_cents asc, t.rank asc
   limit 1
 ) t_start on true;
+
+grant select on table public.creator_explore to anon, authenticated;

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { commentCreateSchema } from "@/lib/validators/schemas";
 
@@ -41,9 +42,7 @@ export async function createCommentAction(formData: FormData) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getAuthUser(supabase);
 
   if (!user) {
     redirect(`/login?next=/c/${parsed.data.creatorSlug}/posts/${parsed.data.postId}`);

@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -106,10 +107,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
 
   const supabase = await createServerSupabaseClient();
 
-  const [{ data: authUser }, detail] = await Promise.all([
-    supabase.auth.getUser(),
-    fetchDetailPreview(slug, id),
-  ]);
+  const [{ user: authUser }, detail] = await Promise.all([getAuthUser(supabase), fetchDetailPreview(slug, id)]);
 
   if (!detail) {
     notFound();
@@ -119,7 +117,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
     "--accent": detail.accent_color || "#16a34a",
   } as CSSProperties;
 
-  const isAuthenticated = Boolean(authUser.user);
+  const isAuthenticated = Boolean(authUser);
   const requiredRank = detail.visibility === "tier" ? detail.min_tier_rank ?? 1 : 1;
 
   const [{ data: tiers }, { data: assets }, { data: comments }] = await Promise.all([
