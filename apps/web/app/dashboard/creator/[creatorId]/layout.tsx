@@ -27,6 +27,9 @@ export default async function CreatorSectionLayout({ children, params }: LayoutP
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm" variant="outline">
+              <Link href={`/dashboard/creator/${creatorId}/onboarding`}>Onboarding</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link href={`/dashboard/creator/${creatorId}/profile`}>Profile</Link>
             </Button>
             <Button asChild size="sm" variant="outline">

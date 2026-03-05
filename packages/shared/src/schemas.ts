@@ -32,6 +32,31 @@ export const creatorSchema = z.object({
   featuredImageUrl: z.string().url().max(1000).optional().or(z.literal("")),
 });
 
+export const creatorOnboardingSchema = z.object({
+  creatorId: z.string().uuid().optional().or(z.literal("")),
+  slug: z
+    .string()
+    .trim()
+    .min(3)
+    .max(50)
+    .regex(slugRegex, "Slug must be lowercase letters, numbers and hyphens"),
+  title: z.string().trim().min(2).max(120),
+  legalFullName: z.string().trim().min(2).max(160),
+  legalBusinessId: z.string().trim().min(6).max(32),
+  contactEmail: z.string().trim().email().max(320),
+  contactPhone: z.string().trim().min(7).max(32),
+  addressLine1: z.string().trim().min(3).max(240),
+  addressLine2: z.string().trim().max(240).optional().or(z.literal("")),
+  addressCity: z.string().trim().min(2).max(120),
+  addressPostalCode: z.string().trim().min(3).max(20),
+  addressCountry: z.string().trim().length(2),
+  contentFocus: z.string().trim().min(20).max(2000),
+});
+
+export const creatorStripeConnectSchema = z.object({
+  creatorId: z.string().uuid(),
+});
+
 export const tierCreateSchema = z.object({
   creatorId: z.string().uuid(),
   name: z.string().trim().min(2).max(80),

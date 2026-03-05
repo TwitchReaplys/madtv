@@ -94,15 +94,7 @@ export default async function CreatorProfileByIdPage({ params, searchParams }: P
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Status</label>
-              <select
-                name="status"
-                defaultValue={creator.status ?? "active"}
-                className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                <option value="active">active</option>
-                <option value="pending">pending</option>
-                <option value="disabled">disabled</option>
-              </select>
+              <Input value={creator.status ?? "active"} readOnly />
             </div>
           </div>
 

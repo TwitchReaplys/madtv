@@ -40,11 +40,9 @@ export async function POST(request: Request) {
     payload: event,
   });
 
-  if (insertError?.code === "23505") {
-    return NextResponse.json({ received: true, duplicate: true });
-  }
+  const isDuplicate = insertError?.code === "23505";
 
-  if (insertError) {
+  if (insertError && !isDuplicate) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
@@ -55,5 +53,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  return NextResponse.json({ received: true, queued: true });
+  return NextResponse.json({ received: true, queued: true, duplicate: isDuplicate });
 }

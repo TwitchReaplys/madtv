@@ -10,6 +10,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 import { enqueueBunnySync } from "@/lib/queue";
 import {
+  creatorOnboardingSchema,
+  creatorStripeConnectSchema,
   creatorVideoUpsertSchema,
   creatorSchema,
   postCreateSchema,
@@ -31,14 +33,18 @@ function getTextValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function isSafeAppPath(value: string) {
+  return value.startsWith("/") && !value.startsWith("//");
+}
+
 function getReturnPath(formData: FormData, fallback: string) {
   const value = getTextValue(formData, "returnPath").trim();
-  return value.startsWith("/") ? value : fallback;
+  return isSafeAppPath(value) ? value : fallback;
 }
 
 function getPathValue(formData: FormData, key: string, fallback: string) {
   const value = getTextValue(formData, key).trim();
-  return value.startsWith("/") ? value : fallback;
+  return isSafeAppPath(value) ? value : fallback;
 }
 
 function buildCreatorSocialLinks(input: {
@@ -66,6 +72,58 @@ function buildCreatorSocialLinks(input: {
   }
 
   return socialLinks;
+}
+
+function getUserEmailVerifiedAt(user: { email_confirmed_at?: string | null; confirmed_at?: string | null }) {
+  return user.email_confirmed_at ?? user.confirmed_at ?? null;
+}
+
+function getAppBaseUrl() {
+  return process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, "") ?? "";
+}
+
+function buildStripeConnectCallbackUrl(creatorId: string, mode: "refresh" | "return") {
+  const envKey = mode === "refresh" ? "STRIPE_CONNECT_REFRESH_URL" : "STRIPE_CONNECT_RETURN_URL";
+  const envTemplate = process.env[envKey]?.trim();
+
+  if (envTemplate) {
+    return envTemplate.includes("{creatorId}")
+      ? envTemplate.replace("{creatorId}", creatorId)
+      : envTemplate;
+  }
+
+  const appBaseUrl = getAppBaseUrl();
+  const fallbackPath = `/dashboard/creator/${creatorId}/onboarding?stripe=${mode}`;
+
+  if (!appBaseUrl) {
+    return fallbackPath;
+  }
+
+  return `${appBaseUrl}${fallbackPath}`;
+}
+
+function deriveOnboardingStatus({
+  currentStatus,
+  emailVerified,
+  stripeConnected,
+}: {
+  currentStatus: string | null | undefined;
+  emailVerified: boolean;
+  stripeConnected: boolean;
+}) {
+  if (currentStatus === "approved" || currentStatus === "rejected") {
+    return currentStatus;
+  }
+
+  if (stripeConnected) {
+    return "stripe_connected";
+  }
+
+  if (emailVerified) {
+    return "email_verified";
+  }
+
+  return "submitted";
 }
 
 async function requireUser() {
@@ -171,6 +229,324 @@ export async function upsertCreatorAction(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/creator");
   redirectWithMessage("/dashboard/creator", "success", "Creator profile created");
+}
+
+export async function upsertCreatorOnboardingAction(formData: FormData) {
+  const creatorIdRaw = getTextValue(formData, "creatorId");
+  const defaultReturnPath = creatorIdRaw ? `/dashboard/creator/${creatorIdRaw}/onboarding` : "/dashboard/creator";
+  const returnPath = getReturnPath(formData, defaultReturnPath);
+
+  const parsed = creatorOnboardingSchema.safeParse({
+    creatorId: creatorIdRaw,
+    slug: getTextValue(formData, "slug"),
+    title: getTextValue(formData, "title"),
+    legalFullName: getTextValue(formData, "legalFullName"),
+    legalBusinessId: getTextValue(formData, "legalBusinessId"),
+    contactEmail: getTextValue(formData, "contactEmail"),
+    contactPhone: getTextValue(formData, "contactPhone"),
+    addressLine1: getTextValue(formData, "addressLine1"),
+    addressLine2: getTextValue(formData, "addressLine2"),
+    addressCity: getTextValue(formData, "addressCity"),
+    addressPostalCode: getTextValue(formData, "addressPostalCode"),
+    addressCountry: getTextValue(formData, "addressCountry"),
+    contentFocus: getTextValue(formData, "contentFocus"),
+  });
+
+  if (!parsed.success) {
+    redirectWithMessage(returnPath, "error", parsed.error.issues[0]?.message ?? "Invalid onboarding form");
+  }
+
+  const { supabase, user } = await requireUser();
+  const emailVerifiedAt = getUserEmailVerifiedAt(user);
+  const normalizedAddressCountry = parsed.data.addressCountry.toUpperCase();
+  const submittedAt = new Date().toISOString();
+
+  if (parsed.data.creatorId) {
+    const isAdmin = await isCreatorAdmin(supabase, parsed.data.creatorId);
+    if (!isAdmin) {
+      redirectWithMessage(returnPath, "error", "You are not allowed to update onboarding for this creator");
+    }
+
+    const { data: existingCreator, error: existingError } = await supabase
+      .from("creators")
+      .select(
+        "id, slug, onboarding_status, onboarding_email_verified_at, stripe_connect_payouts_enabled, stripe_connect_details_submitted",
+      )
+      .eq("id", parsed.data.creatorId)
+      .single();
+
+    if (existingError || !existingCreator) {
+      redirectWithMessage(returnPath, "error", existingError?.message ?? "Creator not found");
+    }
+
+    const effectiveEmailVerifiedAt = existingCreator.onboarding_email_verified_at ?? emailVerifiedAt;
+    const onboardingStatus = deriveOnboardingStatus({
+      currentStatus: existingCreator.onboarding_status,
+      emailVerified: Boolean(effectiveEmailVerifiedAt),
+      stripeConnected: Boolean(
+        existingCreator.stripe_connect_payouts_enabled && existingCreator.stripe_connect_details_submitted,
+      ),
+    });
+
+    const { error: updateError } = await supabase
+      .from("creators")
+      .update({
+        slug: parsed.data.slug,
+        title: parsed.data.title,
+        status: "pending",
+        legal_full_name: parsed.data.legalFullName,
+        legal_business_id: parsed.data.legalBusinessId,
+        contact_email: parsed.data.contactEmail,
+        contact_phone: parsed.data.contactPhone,
+        address_line1: parsed.data.addressLine1,
+        address_line2: parsed.data.addressLine2 || null,
+        address_city: parsed.data.addressCity,
+        address_postal_code: parsed.data.addressPostalCode,
+        address_country: normalizedAddressCountry,
+        content_focus: parsed.data.contentFocus,
+        onboarding_submitted_at: submittedAt,
+        onboarding_email_verified_at: effectiveEmailVerifiedAt,
+        onboarding_status: onboardingStatus,
+      })
+      .eq("id", parsed.data.creatorId);
+
+    if (updateError) {
+      redirectWithMessage(returnPath, "error", updateError.message);
+    }
+
+    revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/onboarding`);
+    revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/profile`);
+    revalidatePath("/dashboard/creator");
+    if (existingCreator.slug) {
+      revalidatePath(`/c/${existingCreator.slug}`);
+    }
+
+    redirectWithMessage(
+      `/dashboard/creator/${parsed.data.creatorId}/onboarding`,
+      "success",
+      "Onboarding data saved",
+    );
+  }
+
+  const onboardingStatus = deriveOnboardingStatus({
+    currentStatus: "submitted",
+    emailVerified: Boolean(emailVerifiedAt),
+    stripeConnected: false,
+  });
+
+  const { data: createdCreator, error: insertError } = await supabase
+    .from("creators")
+    .insert({
+      owner_user_id: user.id,
+      slug: parsed.data.slug,
+      title: parsed.data.title,
+      status: "pending",
+      legal_full_name: parsed.data.legalFullName,
+      legal_business_id: parsed.data.legalBusinessId,
+      contact_email: parsed.data.contactEmail,
+      contact_phone: parsed.data.contactPhone,
+      address_line1: parsed.data.addressLine1,
+      address_line2: parsed.data.addressLine2 || null,
+      address_city: parsed.data.addressCity,
+      address_postal_code: parsed.data.addressPostalCode,
+      address_country: normalizedAddressCountry,
+      content_focus: parsed.data.contentFocus,
+      onboarding_submitted_at: submittedAt,
+      onboarding_email_verified_at: emailVerifiedAt,
+      onboarding_status: onboardingStatus,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !createdCreator) {
+    redirectWithMessage(returnPath, "error", insertError?.message ?? "Failed to create creator onboarding");
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/creator");
+  revalidatePath("/explore");
+  redirectWithMessage(
+    `/dashboard/creator/${createdCreator.id}/onboarding`,
+    "success",
+    "Onboarding profile created",
+  );
+}
+
+export async function refreshStripeConnectStatusAction(formData: FormData) {
+  const parsed = creatorStripeConnectSchema.safeParse({
+    creatorId: getTextValue(formData, "creatorId"),
+  });
+
+  const creatorIdForPath = typeof formData.get("creatorId") === "string" ? String(formData.get("creatorId")) : "";
+  const fallbackPath = creatorIdForPath
+    ? `/dashboard/creator/${creatorIdForPath}/onboarding`
+    : "/dashboard/creator";
+  const returnPath = getReturnPath(formData, fallbackPath);
+
+  if (!parsed.success) {
+    redirectWithMessage(returnPath, "error", parsed.error.issues[0]?.message ?? "Invalid creator id");
+  }
+
+  const { supabase, user } = await requireUser();
+  const isAdmin = await isCreatorAdmin(supabase, parsed.data.creatorId);
+
+  if (!isAdmin) {
+    redirectWithMessage(returnPath, "error", "You are not allowed to refresh Stripe status for this creator");
+  }
+
+  const { data: creator, error: creatorError } = await supabase
+    .from("creators")
+    .select("id, slug, stripe_connect_account_id, onboarding_status, onboarding_email_verified_at")
+    .eq("id", parsed.data.creatorId)
+    .single();
+
+  if (creatorError || !creator) {
+    redirectWithMessage(returnPath, "error", creatorError?.message ?? "Creator not found");
+  }
+
+  if (!creator.stripe_connect_account_id) {
+    redirectWithMessage(returnPath, "error", "Stripe Connect account is not linked yet");
+  }
+
+  const stripe = getStripeClient();
+  const account = await stripe.accounts.retrieve(creator.stripe_connect_account_id);
+  const emailVerifiedAt = creator.onboarding_email_verified_at ?? getUserEmailVerifiedAt(user);
+  const stripeConnected = Boolean(account.payouts_enabled && account.details_submitted);
+
+  const { error: updateError } = await supabase
+    .from("creators")
+    .update({
+      stripe_connect_charges_enabled: Boolean(account.charges_enabled),
+      stripe_connect_payouts_enabled: Boolean(account.payouts_enabled),
+      stripe_connect_details_submitted: Boolean(account.details_submitted),
+      onboarding_email_verified_at: emailVerifiedAt,
+      onboarding_status: deriveOnboardingStatus({
+        currentStatus: creator.onboarding_status,
+        emailVerified: Boolean(emailVerifiedAt),
+        stripeConnected,
+      }),
+    })
+    .eq("id", parsed.data.creatorId);
+
+  if (updateError) {
+    redirectWithMessage(returnPath, "error", updateError.message);
+  }
+
+  revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/onboarding`);
+  revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/settings`);
+  if (creator.slug) {
+    revalidatePath(`/c/${creator.slug}`);
+  }
+
+  redirectWithMessage(returnPath, "success", stripeConnected ? "Stripe Connect is fully connected" : "Stripe status refreshed");
+}
+
+export async function startStripeConnectOnboardingAction(formData: FormData) {
+  const parsed = creatorStripeConnectSchema.safeParse({
+    creatorId: getTextValue(formData, "creatorId"),
+  });
+
+  const creatorIdForPath = typeof formData.get("creatorId") === "string" ? String(formData.get("creatorId")) : "";
+  const fallbackPath = creatorIdForPath
+    ? `/dashboard/creator/${creatorIdForPath}/onboarding`
+    : "/dashboard/creator";
+  const returnPath = getReturnPath(formData, fallbackPath);
+
+  if (!parsed.success) {
+    redirectWithMessage(returnPath, "error", parsed.error.issues[0]?.message ?? "Invalid creator id");
+  }
+
+  const { supabase, user } = await requireUser();
+  const isAdmin = await isCreatorAdmin(supabase, parsed.data.creatorId);
+
+  if (!isAdmin) {
+    redirectWithMessage(returnPath, "error", "You are not allowed to connect Stripe for this creator");
+  }
+
+  const { data: creator, error: creatorError } = await supabase
+    .from("creators")
+    .select(
+      "id, slug, title, onboarding_status, onboarding_email_verified_at, stripe_connect_account_id, contact_email, contact_phone, address_country, legal_full_name, legal_business_id, address_line1, address_city, address_postal_code, content_focus",
+    )
+    .eq("id", parsed.data.creatorId)
+    .single();
+
+  if (creatorError || !creator) {
+    redirectWithMessage(returnPath, "error", creatorError?.message ?? "Creator not found");
+  }
+
+  if (
+    !creator.legal_full_name ||
+    !creator.legal_business_id ||
+    !creator.contact_email ||
+    !creator.contact_phone ||
+    !creator.address_line1 ||
+    !creator.address_city ||
+    !creator.address_postal_code ||
+    !creator.address_country ||
+    !creator.content_focus
+  ) {
+    redirectWithMessage(returnPath, "error", "Finish onboarding details before connecting Stripe");
+  }
+
+  const emailVerifiedAt = creator.onboarding_email_verified_at ?? getUserEmailVerifiedAt(user);
+  if (!emailVerifiedAt) {
+    redirectWithMessage(returnPath, "error", "Verify your account email before Stripe Connect onboarding");
+  }
+
+  const stripe = getStripeClient();
+  let stripeConnectAccountId = creator.stripe_connect_account_id;
+
+  if (!stripeConnectAccountId) {
+    const account = await stripe.accounts.create({
+      type: "express",
+      country: creator.address_country.toUpperCase(),
+      email: creator.contact_email,
+      capabilities: {
+        transfers: {
+          requested: true,
+        },
+      },
+      metadata: {
+        creatorId: creator.id,
+        creatorSlug: creator.slug,
+        ownerUserId: user.id,
+      },
+      business_profile: {
+        name: creator.title,
+        product_description: creator.content_focus.slice(0, 1000),
+      },
+    });
+
+    stripeConnectAccountId = account.id;
+  }
+
+  const refreshUrl = buildStripeConnectCallbackUrl(parsed.data.creatorId, "refresh");
+  const returnUrl = buildStripeConnectCallbackUrl(parsed.data.creatorId, "return");
+
+  const accountLink = await stripe.accountLinks.create({
+    account: stripeConnectAccountId,
+    type: "account_onboarding",
+    refresh_url: refreshUrl,
+    return_url: returnUrl,
+  });
+
+  const { error: updateError } = await supabase
+    .from("creators")
+    .update({
+      stripe_connect_account_id: stripeConnectAccountId,
+      onboarding_email_verified_at: emailVerifiedAt,
+      onboarding_status: creator.onboarding_status === "approved" || creator.onboarding_status === "rejected"
+        ? creator.onboarding_status
+        : "stripe_pending",
+    })
+    .eq("id", parsed.data.creatorId);
+
+  if (updateError) {
+    redirectWithMessage(returnPath, "error", updateError.message);
+  }
+
+  redirect(accountLink.url);
 }
 
 export async function createTierAction(formData: FormData) {
@@ -737,7 +1113,6 @@ export async function updateCreatorProfileByIdAction(formData: FormData) {
 
   const schema = creatorSchema.extend({
     creatorId: z.string().uuid(),
-    status: z.enum(["active", "pending", "disabled"]).optional().default("active"),
   });
 
   const parsed = schema.safeParse({
@@ -758,7 +1133,6 @@ export async function updateCreatorProfileByIdAction(formData: FormData) {
     featuredVideoId: getTextValue(formData, "featuredVideoId"),
     featuredThumbnailUrl: getTextValue(formData, "featuredThumbnailUrl"),
     featuredImageUrl: getTextValue(formData, "featuredImageUrl"),
-    status: getTextValue(formData, "status") || "active",
   });
 
   if (!parsed.success) {
@@ -829,7 +1203,6 @@ export async function updateCreatorProfileByIdAction(formData: FormData) {
     avatar_url: parsed.data.avatarUrl || null,
     seo_description: parsed.data.seoDescription || null,
     social_links: buildCreatorSocialLinks(parsed.data),
-    status: parsed.data.status,
     featured_media_type: parsed.data.featuredMediaType || "none",
     featured_video_id:
       parsed.data.featuredMediaType === "bunny_video" ? parsed.data.featuredVideoId || null : null,

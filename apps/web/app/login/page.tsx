@@ -11,7 +11,10 @@ type PageProps = {
 export default async function LoginPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const nextParam = params.next;
-  const nextPath = typeof nextParam === "string" && nextParam.startsWith("/") ? nextParam : "/dashboard";
+  const nextPath =
+    typeof nextParam === "string" && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/dashboard";
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-180px)] w-full max-w-md items-center">

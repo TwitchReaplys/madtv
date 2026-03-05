@@ -131,6 +131,8 @@ Add-on migration:
 - `supabase/migrations/20260305110000_creator_theme_and_previews.sql`
 - `supabase/migrations/20260305130000_explore_and_comments.sql`
 - `supabase/migrations/20260305170000_portals_analytics_admin.sql`
+- `supabase/migrations/20260305203000_creator_onboarding_stripe_connect.sql`
+- `supabase/migrations/20260305213000_fix_creator_status_visibility.sql`
 
 Added fields:
 - `creators.accent_color`
@@ -145,6 +147,23 @@ Added fields:
 - `creators.featured_video_id`
 - `creators.featured_thumbnail_url`
 - `creators.featured_image_url`
+- `creators.onboarding_status`
+- `creators.onboarding_submitted_at`
+- `creators.onboarding_email_verified_at`
+- `creators.legal_full_name`
+- `creators.legal_business_id`
+- `creators.contact_email`
+- `creators.contact_phone`
+- `creators.address_line1`
+- `creators.address_line2`
+- `creators.address_city`
+- `creators.address_postal_code`
+- `creators.address_country`
+- `creators.content_focus`
+- `creators.stripe_connect_account_id`
+- `creators.stripe_connect_charges_enabled`
+- `creators.stripe_connect_payouts_enabled`
+- `creators.stripe_connect_details_submitted`
 - `post_assets.meta`
 - `post_assets.creator_video_id`
 
@@ -172,6 +191,8 @@ Web env template:
   - optional: `NEXT_PUBLIC_SUPABASE_COOKIE_SECURE=true|false`
     - leave empty to auto-detect from `NEXT_PUBLIC_APP_URL` / request protocol
     - set `false` only if you run app over plain HTTP
+  - optional: `STRIPE_CONNECT_REFRESH_URL` and `STRIPE_CONNECT_RETURN_URL`
+    - can include `{creatorId}` placeholder
 
 Worker env template:
 - `apps/worker/.env.example`
@@ -191,6 +212,8 @@ psql "$SUPABASE_DB_URL" -f supabase/migrations/20260304213000_init.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305110000_creator_theme_and_previews.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305130000_explore_and_comments.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305170000_portals_analytics_admin.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305203000_creator_onboarding_stripe_connect.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305213000_fix_creator_status_visibility.sql
 ```
 
 Run web:

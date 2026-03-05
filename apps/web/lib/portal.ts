@@ -9,6 +9,8 @@ export type CreatorAccess = {
   title: string;
   slug: string;
   status: "active" | "pending" | "disabled";
+  onboardingStatus: "draft" | "submitted" | "email_verified" | "stripe_pending" | "stripe_connected" | "approved" | "rejected";
+  stripeConnectReady: boolean;
 };
 
 export async function requireDashboardUser() {
@@ -32,15 +34,33 @@ export async function requireDashboardUser() {
 
   const { data: memberships } = await supabase
     .from("creator_members")
-    .select("creator_id, role, creators!inner ( id, title, slug, status )")
+    .select(
+      "creator_id, role, creators!inner ( id, title, slug, status, onboarding_status, stripe_connect_payouts_enabled, stripe_connect_details_submitted )",
+    )
     .eq("user_id", user.id)
     .in("role", ["owner", "admin", "moderator"]);
 
   const creatorAccess = (memberships ?? [])
     .map((row) => {
       const creatorRelation = row.creators as
-        | { id?: string; title?: string; slug?: string; status?: string }
-        | { id?: string; title?: string; slug?: string; status?: string }[]
+        | {
+            id?: string;
+            title?: string;
+            slug?: string;
+            status?: string;
+            onboarding_status?: string;
+            stripe_connect_payouts_enabled?: boolean;
+            stripe_connect_details_submitted?: boolean;
+          }
+        | {
+            id?: string;
+            title?: string;
+            slug?: string;
+            status?: string;
+            onboarding_status?: string;
+            stripe_connect_payouts_enabled?: boolean;
+            stripe_connect_details_submitted?: boolean;
+          }[]
         | null;
 
       const creator = Array.isArray(creatorRelation) ? creatorRelation[0] : creatorRelation;
@@ -50,6 +70,19 @@ export async function requireDashboardUser() {
 
       const role = row.role as "owner" | "admin" | "moderator";
       const status = (creator.status as "active" | "pending" | "disabled" | null) ?? "active";
+      const onboardingStatus =
+        (creator.onboarding_status as
+          | "draft"
+          | "submitted"
+          | "email_verified"
+          | "stripe_pending"
+          | "stripe_connected"
+          | "approved"
+          | "rejected"
+          | null) ?? "draft";
+      const stripeConnectReady = Boolean(
+        creator.stripe_connect_payouts_enabled && creator.stripe_connect_details_submitted,
+      );
 
       return {
         creatorId: creator.id,
@@ -57,6 +90,8 @@ export async function requireDashboardUser() {
         title: creator.title,
         slug: creator.slug,
         status,
+        onboardingStatus,
+        stripeConnectReady,
       } satisfies CreatorAccess;
     })
     .filter((entry): entry is CreatorAccess => entry !== null);

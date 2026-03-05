@@ -1,6 +1,8 @@
 export {
   analyticsEventSchema,
   commentCreateSchema,
+  creatorOnboardingSchema,
+  creatorStripeConnectSchema,
   creatorVideoUpsertSchema,
   bunnyCreateUploadSchema,
   bunnyEmbedTokenSchema,
