@@ -2,16 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { z } from "zod";
 
-import { getAuthUser } from "@/lib/supabase/auth";
+import { getVerifiedAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 async function requirePlatformAdminForMutation() {
   const supabase = await createServerSupabaseClient();
-  const cookieStore = await cookies();
-  const { user } = await getAuthUser(supabase, cookieStore.getAll());
+  const { user } = await getVerifiedAuthUser(supabase);
 
   if (!user) {
     redirect("/login");

@@ -12,13 +12,18 @@ export type CookieLike = {
 type SupabaseAuthLike = {
   auth: {
     getUser: () => Promise<{ data: { user: User | null }; error: AuthErrorLike }>;
-    getSession: () => Promise<{ data: { session: { user: User | null } | null }; error: AuthErrorLike }>;
   };
 };
 
 export type AuthUserResult = {
   user: User | null;
-  source: "getSession" | "cookie-fallback" | "getUser" | "none";
+  source: "cookie-fallback" | "getUser" | "none";
+  isVerified: boolean;
+  errorMessage: string | null;
+};
+
+export type VerifiedAuthUserResult = {
+  user: User | null;
   errorMessage: string | null;
 };
 
@@ -184,27 +189,50 @@ function getUserFromAccessToken(accessToken: string): User | null {
   } as User;
 }
 
-export async function getAuthUser(supabase: SupabaseAuthLike, cookieEntries: CookieLike[] = []): Promise<AuthUserResult> {
+export async function getVerifiedAuthUser(supabase: SupabaseAuthLike): Promise<VerifiedAuthUserResult> {
   let authErrorMessage: string | null = null;
 
   try {
-    const { data, error } = await supabase.auth.getSession();
-
-    if (data.session?.user) {
+    const { data, error } = await supabase.auth.getUser();
+    if (data.user) {
       return {
-        user: data.session.user,
-        source: "getSession",
+        user: data.user,
         errorMessage: null,
       };
     }
 
-    if (!error) {
-      authErrorMessage = null;
-    } else {
-      authErrorMessage = error.message ?? "Unable to read auth session";
+    if (error) {
+      authErrorMessage = error.message ?? "Unable to verify user";
     }
   } catch (error) {
     authErrorMessage = getErrorMessage(error);
+  }
+
+  return {
+    user: null,
+    errorMessage: authErrorMessage,
+  };
+}
+
+export async function getAuthUser(supabase: SupabaseAuthLike, cookieEntries: CookieLike[] = []): Promise<AuthUserResult> {
+  const verified = await getVerifiedAuthUser(supabase);
+
+  if (verified.user) {
+    return {
+      user: verified.user,
+      source: "getUser",
+      isVerified: true,
+      errorMessage: null,
+    };
+  }
+
+  if (!verified.errorMessage) {
+    return {
+      user: null,
+      source: "none",
+      isVerified: false,
+      errorMessage: null,
+    };
   }
 
   const cookieSession = getSessionFromCookies(cookieEntries);
@@ -212,7 +240,8 @@ export async function getAuthUser(supabase: SupabaseAuthLike, cookieEntries: Coo
     return {
       user: cookieSession.user,
       source: "cookie-fallback",
-      errorMessage: authErrorMessage,
+      isVerified: false,
+      errorMessage: verified.errorMessage,
     };
   }
 
@@ -222,34 +251,16 @@ export async function getAuthUser(supabase: SupabaseAuthLike, cookieEntries: Coo
       return {
         user: decodedUser,
         source: "cookie-fallback",
-        errorMessage: authErrorMessage,
+        isVerified: false,
+        errorMessage: verified.errorMessage,
       };
-    }
-  }
-
-  try {
-    const { data, error } = await supabase.auth.getUser();
-
-    if (data.user) {
-      return {
-        user: data.user,
-        source: "getUser",
-        errorMessage: authErrorMessage,
-      };
-    }
-
-    if (error && !authErrorMessage) {
-      authErrorMessage = error.message ?? "Unable to verify user";
-    }
-  } catch (error) {
-    if (!authErrorMessage) {
-      authErrorMessage = getErrorMessage(error);
     }
   }
 
   return {
     user: null,
     source: "none",
-    errorMessage: authErrorMessage,
+    isVerified: false,
+    errorMessage: verified.errorMessage,
   };
 }

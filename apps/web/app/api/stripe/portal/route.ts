@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAuthUser, parseCookieHeader } from "@/lib/supabase/auth";
+import { getVerifiedAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 
@@ -10,7 +10,7 @@ function getReturnUrl(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
-  const { user } = await getAuthUser(supabase, parseCookieHeader(request.headers.get("cookie")));
+  const { user } = await getVerifiedAuthUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

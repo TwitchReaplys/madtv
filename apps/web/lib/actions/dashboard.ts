@@ -2,11 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { z } from "zod";
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { getAuthUser } from "@/lib/supabase/auth";
+import { getVerifiedAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getStripeClient } from "@/lib/stripe";
 import { enqueueBunnySync } from "@/lib/queue";
@@ -71,8 +70,7 @@ function buildCreatorSocialLinks(input: {
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
-  const cookieStore = await cookies();
-  const { user } = await getAuthUser(supabase, cookieStore.getAll());
+  const { user } = await getVerifiedAuthUser(supabase);
 
   if (!user) {
     redirect("/login");
