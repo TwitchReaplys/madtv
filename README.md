@@ -1,170 +1,171 @@
-# MadTV MVP
+# MadTV Monorepo
 
-MVP multi-creator subscription platform (HeroHero-like) built with:
-- Next.js App Router + TypeScript
-- Supabase (Postgres + Auth + RLS)
-- Stripe subscriptions (Checkout, Portal, Webhooks)
-- Bunny Stream direct uploads via TUS
+Multi-creator subscription platform MVP (HeroHero-like), now extended with:
+- modern mobile-first UI (Tailwind + Radix-style components)
+- dark mode (system + manual toggle)
+- creator microsites with theme accent + locked post teasers
+- Redis queue + BullMQ worker for Stripe event processing
 
-## Features implemented
+## Monorepo structure
 
-### Creator
-- Sign up / sign in
-- Create and edit creator profile (`slug`, `title`, `about`)
-- Create/activate/deactivate/delete tiers (Stripe Product/Price created on tier creation)
-- Create/edit/delete posts with visibility:
-  - `public`
-  - `members`
-  - `tier` (min tier rank)
-- Upload Bunny video and attach to post
+- `apps/web` - Next.js App Router app
+- `apps/worker` - BullMQ background worker
+- `packages/shared` - shared Zod schemas + queue constants
+- `supabase/migrations` - SQL schema, RLS, helper functions
 
-### Member
-- Browse creator page and post feed
-- See public posts anonymously
-- Subscribe via Stripe Checkout
-- Manage subscription via Stripe Billing Portal
-- After successful subscription + webhook sync, gated posts become visible via RLS
+## Implemented add-ons
 
-### Security
-- RLS enabled on all relevant tables
-- Post visibility checks enforced in Postgres policies/functions
-- Service role, Stripe, and Bunny secrets are server-only
+### UI / design system
 
-## Routes
+`apps/web/components/ui/*`:
+- `button.tsx`
+- `card.tsx`
+- `badge.tsx`
+- `tabs.tsx`
+- `dialog.tsx`
+- `input.tsx`
+- `textarea.tsx`
+- `dropdown.tsx`
+- `skeleton.tsx`
 
-Public:
-- `/`
-- `/c/[slug]`
-- `/c/[slug]/posts/[id]`
+`apps/web/components/marketing/*`:
+- `hero.tsx`
+- `feature-grid.tsx`
+- `pricing-cards.tsx`
+- `faq.tsx`
 
-Auth:
-- `/login`
-- `/logout`
+`apps/web/components/creator/*`:
+- `creator-header.tsx`
+- `tier-cards.tsx`
+- `post-card.tsx`
+- `locked-post-card.tsx`
+- `subscribe-cta.tsx`
+- `paywall-panel.tsx`
 
-Dashboard (protected):
-- `/dashboard`
-- `/dashboard/creator`
-- `/dashboard/tiers`
-- `/dashboard/posts`
-- `/dashboard/posts/new`
-- `/dashboard/posts/[id]/edit`
+Dark mode:
+- `components/theme-provider.tsx`
+- `components/theme-toggle.tsx`
 
-Stripe APIs:
-- `POST /api/stripe/checkout`
-- `POST /api/stripe/portal`
-- `POST /api/stripe/webhook`
+### Public creator pages
 
-Bunny APIs:
-- `POST /api/bunny/create-upload`
-- `GET|POST /api/bunny/embed-token`
+- `/c/[slug]`:
+  - cover/avatar/title/bio
+  - tier cards near top
+  - locked teasers for gated posts
+  - sticky mobile subscribe CTA for non-members
+  - creator accent color via CSS variable `--accent`
 
-Other:
-- `GET /api/health`
+- `/c/[slug]/posts/[id]`:
+  - full content for authorized users
+  - paywall panel for unauthorized users with subscribe CTA
+
+SEO:
+- dynamic metadata via `generateMetadata` on creator and post routes
+
+### Worker + queue architecture
+
+- Redis-backed queue via BullMQ
+- Webhook route `POST /api/stripe/webhook` is thin:
+  1. verify Stripe signature
+  2. persist event in `stripe_events` (idempotency)
+  3. enqueue `stripe:event` job
+  4. return `200` quickly
+
+Worker (`apps/worker`) processes jobs:
+- `stripe:event`
+- `bunny:sync` (stub)
+- `email:send` (stub)
+
+Retry strategy:
+- attempts: `8`
+- exponential backoff starting at `5s`
+
+## Database changes
+
+Base migration:
+- `supabase/migrations/20260304213000_init.sql`
+
+Add-on migration:
+- `supabase/migrations/20260305110000_creator_theme_and_previews.sql`
+
+Added fields:
+- `creators.accent_color`
+- `creators.cover_image_url`
+- `creators.avatar_url`
+- `creators.seo_description`
+- `creators.links`
+- `post_assets.meta`
+
+Added SQL functions for safe public previews:
+- `creator_post_previews(p_creator_id uuid)`
+- `creator_post_detail_preview(p_creator_slug text, p_post_id uuid)`
+
+These functions expose teaser data while full content remains RLS-protected.
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local` and fill values:
+Web env template:
+- `apps/web/.env.example`
 
-Public:
-- `NEXT_PUBLIC_APP_URL`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Server-only:
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PORTAL_RETURN_URL`
-- `BUNNY_STREAM_API_KEY`
-- `BUNNY_STREAM_LIBRARY_ID`
-- `BUNNY_EMBED_TOKEN_KEY` (optional)
+Worker env template:
+- `apps/worker/.env.example`
 
 ## Local development
 
-1. Install dependencies:
+Install:
 
 ```bash
 pnpm install
 ```
 
-2. Configure env:
-
-```bash
-cp .env.example .env.local
-```
-
-3. Apply SQL migration to Supabase Postgres:
+Apply migrations (example):
 
 ```bash
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260304213000_init.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305110000_creator_theme_and_previews.sql
 ```
 
-If using Supabase CLI with a linked project, you can also use:
+Run web:
 
 ```bash
-supabase db push
+pnpm dev:web
 ```
 
-4. Start app:
+Run worker:
 
 ```bash
-pnpm dev
+pnpm dev:worker
 ```
 
-App runs on `http://localhost:3000`.
-
-## Stripe setup notes
-
-- Ensure each creator tier gets Stripe product/price from dashboard tier creation.
-- Run webhook forwarding locally:
+## Build & typecheck
 
 ```bash
-stripe listen --forward-to http://localhost:3000/api/stripe/webhook
+pnpm lint
+pnpm typecheck
+pnpm build:web
+pnpm build:worker
 ```
 
-- Put returned signing secret into `STRIPE_WEBHOOK_SECRET`.
+## Docker / Coolify
 
-## Bunny upload flow
+Web Dockerfile:
+- `apps/web/Dockerfile`
 
-1. Client requests `POST /api/bunny/create-upload`.
-2. Server creates Bunny video object and returns TUS auth signature.
-3. Client uploads directly to Bunny TUS endpoint (`https://video.bunnycdn.com/tusupload`).
-4. Post save stores `bunny_video_id` + `bunny_library_id` in `post_assets`.
-5. Post detail renders Bunny iframe embed.
+Worker Dockerfile:
+- `apps/worker/Dockerfile`
 
-## Database and RLS
+Compose example:
+- `docker-compose.example.yml`
 
-SQL migration is in:
-- `supabase/migrations/20260304213000_init.sql`
+Health endpoint:
+- `/api/health`
 
-It includes:
-- Schema tables for profiles/creators/tiers/subscriptions/posts/assets/comments/stripe events
-- Triggers:
-  - `handle_new_user()` on `auth.users`
-  - owner auto-membership on creator create
-- Helper functions:
-  - `is_creator_admin(creator_id uuid)`
-  - `active_subscription_rank(creator_id uuid)`
-  - `can_view_post(...)`
-- Policies enforcing post gating and admin ownership permissions
+## Manual acceptance checks (UI + flow)
 
-## Manual acceptance test checklist
-
-1. Sign up user in `/login` and verify profile row exists in `profiles`.
-2. Create creator profile in `/dashboard/creator`.
-3. Create tier in `/dashboard/tiers` and confirm Stripe product/price IDs are stored.
-4. Create two posts:
-   - public post is visible anonymously at `/c/[slug]`
-   - members/tier posts are hidden anonymously
-5. Subscribe via `/c/[slug]` tier button.
-6. Verify Stripe webhook writes/updates `subscriptions` row.
-7. Reload `/c/[slug]` as subscribed user and verify gated post visibility appears.
-8. Upload Bunny video in post form and verify playback in post detail page.
-
-## Deploying on Coolify
-
-- Use included `Dockerfile`.
-- Configure environment variables in Coolify.
-- Health check endpoint: `/api/health`.
-- Exposed port: `3000`.
-
+1. Landing page has hero + feature grid + pricing cards + FAQ.
+2. Creator page supports dark mode and shows tier cards + locked previews.
+3. On mobile, non-member sees sticky subscribe CTA.
+4. Stripe webhook stores event and enqueues job.
+5. Worker processes `stripe:event` and updates `subscriptions`.
+6. Unauthorized post detail shows paywall panel.
+7. Authorized member sees full gated content + Bunny video.

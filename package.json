@@ -1,33 +1,15 @@
 {
-  "name": "madtv",
-  "version": "0.1.0",
+  "name": "madtv-monorepo",
   "private": true,
+  "version": "0.2.0",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@supabase/ssr": "^0.9.0",
-    "@supabase/supabase-js": "^2.98.0",
-    "clsx": "^2.1.1",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "stripe": "^20.4.0",
-    "tus-js-client": "^4.3.1",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "dev:web": "pnpm --filter @madtv/web dev",
+    "build:web": "pnpm --filter @madtv/web build",
+    "start:web": "pnpm --filter @madtv/web start",
+    "dev:worker": "pnpm --filter @madtv/worker dev",
+    "build:worker": "pnpm --filter @madtv/worker build",
+    "start:worker": "pnpm --filter @madtv/worker start",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
   }
 }
