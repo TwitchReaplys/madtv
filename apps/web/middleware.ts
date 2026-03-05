@@ -4,6 +4,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { assertSupabasePublicEnv, supabaseAnonKey, supabaseUrl } from "@/lib/supabase/shared";
 
+const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
+
+function isProtectedPath(pathname: string) {
+  return pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
+}
+
 export async function middleware(request: NextRequest) {
   assertSupabasePublicEnv();
 
@@ -30,14 +36,20 @@ export async function middleware(request: NextRequest) {
         });
       },
     },
+    cookieOptions: {
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: COOKIE_MAX_AGE_SECONDS,
+    },
   });
 
   const { user } = await getAuthUser(supabase);
 
-  if (!user && (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/admin"))) {
+  if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", request.nextUrl.pathname);
+    url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 
@@ -51,5 +63,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|api/health|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$).*)",
+  ],
 };
