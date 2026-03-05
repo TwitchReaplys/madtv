@@ -50,6 +50,25 @@ function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice) {
   return null;
 }
 
+async function getSubscriptionIdFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
+  const paymentIntentLike = paymentIntent as Stripe.PaymentIntent & {
+    invoice?: string | Stripe.Invoice | null;
+  };
+
+  const invoiceRef = paymentIntentLike.invoice;
+
+  if (!invoiceRef) {
+    return null;
+  }
+
+  if (typeof invoiceRef === "string") {
+    const invoice = await stripe.invoices.retrieve(invoiceRef);
+    return getSubscriptionIdFromInvoice(invoice);
+  }
+
+  return getSubscriptionIdFromInvoice(invoiceRef);
+}
+
 function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
   const subLike = subscription as Stripe.Subscription & {
     current_period_end?: number | null;
@@ -196,6 +215,18 @@ async function processStripeEvent(eventId: string) {
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       const subscriptionId = getSubscriptionIdFromInvoice(invoice);
+
+      if (subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await upsertSubscriptionFromStripe(subscription);
+      }
+      break;
+    }
+
+    case "payment_intent.succeeded":
+    case "payment_intent.payment_failed": {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const subscriptionId = await getSubscriptionIdFromPaymentIntent(paymentIntent);
 
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
