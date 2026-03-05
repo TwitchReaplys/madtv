@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     }),
   });
 
-  const { user } = await getAuthUser(supabase);
+  const { user } = await getAuthUser(supabase, request.cookies.getAll());
 
   if (!user && isProtectedPath(request.nextUrl.pathname)) {
     const url = request.nextUrl.clone();

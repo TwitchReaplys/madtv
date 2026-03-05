@@ -4,6 +4,11 @@ type AuthErrorLike = {
   message?: string;
 } | null;
 
+export type CookieLike = {
+  name: string;
+  value: string;
+};
+
 type SupabaseAuthLike = {
   auth: {
     getUser: () => Promise<{ data: { user: User | null }; error: AuthErrorLike }>;
@@ -13,7 +18,7 @@ type SupabaseAuthLike = {
 
 export type AuthUserResult = {
   user: User | null;
-  source: "getUser" | "getSession-fallback" | "none";
+  source: "getSession" | "cookie-fallback" | "getUser" | "none";
   errorMessage: string | null;
 };
 
@@ -29,8 +34,198 @@ function getErrorMessage(error: unknown) {
   return "Unknown auth error";
 }
 
-export async function getAuthUser(supabase: SupabaseAuthLike): Promise<AuthUserResult> {
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const withPadding = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return Buffer.from(withPadding, "base64").toString("utf8");
+}
+
+function safeParseJson<T>(input: string): T | null {
+  try {
+    return JSON.parse(input) as T;
+  } catch {
+    return null;
+  }
+}
+
+export function parseCookieHeader(cookieHeader: string | null): CookieLike[] {
+  if (!cookieHeader) {
+    return [];
+  }
+
+  return cookieHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const separatorIndex = entry.indexOf("=");
+      if (separatorIndex < 0) {
+        return null;
+      }
+
+      const name = entry.slice(0, separatorIndex).trim();
+      const value = entry.slice(separatorIndex + 1).trim();
+
+      if (!name) {
+        return null;
+      }
+
+      return { name, value } satisfies CookieLike;
+    })
+    .filter((entry): entry is CookieLike => entry !== null);
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split(".");
+  if (parts.length !== 3 || !parts[1]) {
+    return null;
+  }
+
+  try {
+    const payloadJson = decodeBase64Url(parts[1]);
+    return safeParseJson<Record<string, unknown>>(payloadJson);
+  } catch {
+    return null;
+  }
+}
+
+function parseSessionCookieValue(value: string) {
+  const candidates = [value];
+
+  try {
+    const decoded = decodeURIComponent(value);
+    if (decoded !== value) {
+      candidates.push(decoded);
+    }
+  } catch {
+    // Ignore malformed URI sequences.
+  }
+
+  for (const candidate of candidates) {
+    const withoutPrefix = candidate.startsWith("base64-") ? candidate.slice("base64-".length) : candidate;
+    const decodedCandidate = candidate.startsWith("base64-")
+      ? (() => {
+          try {
+            return decodeBase64Url(withoutPrefix);
+          } catch {
+            return null;
+          }
+        })()
+      : candidate;
+
+    const parsed = decodedCandidate ? safeParseJson<Record<string, unknown>>(decodedCandidate) : null;
+    if (!parsed) {
+      continue;
+    }
+
+    const accessToken = typeof parsed.access_token === "string" ? parsed.access_token : null;
+    const parsedUser =
+      parsed.user && typeof parsed.user === "object" && !Array.isArray(parsed.user) ? (parsed.user as User) : null;
+
+    if (accessToken || parsedUser) {
+      return {
+        accessToken,
+        user: parsedUser,
+      };
+    }
+  }
+
+  return null;
+}
+
+function getSessionFromCookies(cookieEntries: CookieLike[]) {
+  const authCookies = cookieEntries.filter((entry) => entry.name.includes("-auth-token"));
+  if (authCookies.length === 0) {
+    return null;
+  }
+
+  const groups = new Map<string, { index: number; value: string }[]>();
+
+  for (const cookie of authCookies) {
+    const chunkMatch = cookie.name.match(/^(.*)\.(\d+)$/);
+    const key = chunkMatch?.[1] ?? cookie.name;
+    const index = chunkMatch?.[2] ? Number.parseInt(chunkMatch[2], 10) : 0;
+    const list = groups.get(key) ?? [];
+    list.push({
+      index: Number.isFinite(index) ? index : 0,
+      value: cookie.value,
+    });
+    groups.set(key, list);
+  }
+
+  for (const entries of groups.values()) {
+    const sorted = [...entries].sort((a, b) => a.index - b.index);
+    const combined = sorted.map((entry) => entry.value).join("");
+    const parsed = parseSessionCookieValue(combined);
+    if (parsed) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function getUserFromAccessToken(accessToken: string): User | null {
+  const payload = decodeJwtPayload(accessToken);
+  if (!payload) {
+    return null;
+  }
+
+  const id = typeof payload.sub === "string" ? payload.sub : null;
+  if (!id) {
+    return null;
+  }
+
+  return {
+    id,
+    aud: typeof payload.aud === "string" ? payload.aud : "authenticated",
+    role: typeof payload.role === "string" ? payload.role : "authenticated",
+    email: typeof payload.email === "string" ? payload.email : null,
+  } as User;
+}
+
+export async function getAuthUser(supabase: SupabaseAuthLike, cookieEntries: CookieLike[] = []): Promise<AuthUserResult> {
   let authErrorMessage: string | null = null;
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (data.session?.user) {
+      return {
+        user: data.session.user,
+        source: "getSession",
+        errorMessage: null,
+      };
+    }
+
+    if (!error) {
+      authErrorMessage = null;
+    } else {
+      authErrorMessage = error.message ?? "Unable to read auth session";
+    }
+  } catch (error) {
+    authErrorMessage = getErrorMessage(error);
+  }
+
+  const cookieSession = getSessionFromCookies(cookieEntries);
+  if (cookieSession?.user) {
+    return {
+      user: cookieSession.user,
+      source: "cookie-fallback",
+      errorMessage: authErrorMessage,
+    };
+  }
+
+  if (cookieSession?.accessToken) {
+    const decodedUser = getUserFromAccessToken(cookieSession.accessToken);
+    if (decodedUser) {
+      return {
+        user: decodedUser,
+        source: "cookie-fallback",
+        errorMessage: authErrorMessage,
+      };
+    }
+  }
 
   try {
     const { data, error } = await supabase.auth.getUser();
@@ -39,35 +234,17 @@ export async function getAuthUser(supabase: SupabaseAuthLike): Promise<AuthUserR
       return {
         user: data.user,
         source: "getUser",
-        errorMessage: null,
-      };
-    }
-
-    if (!error) {
-      return {
-        user: null,
-        source: "none",
-        errorMessage: null,
-      };
-    }
-
-    authErrorMessage = error.message ?? "Unable to verify user";
-  } catch (error) {
-    authErrorMessage = getErrorMessage(error);
-  }
-
-  try {
-    const { data } = await supabase.auth.getSession();
-
-    if (data.session?.user) {
-      return {
-        user: data.session.user,
-        source: "getSession-fallback",
         errorMessage: authErrorMessage,
       };
     }
-  } catch {
-    // No-op: if fallback session lookup fails, return unauthenticated.
+
+    if (error && !authErrorMessage) {
+      authErrorMessage = error.message ?? "Unable to verify user";
+    }
+  } catch (error) {
+    if (!authErrorMessage) {
+      authErrorMessage = getErrorMessage(error);
+    }
   }
 
   return {

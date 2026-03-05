@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -106,8 +107,12 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
   const query = await searchParams;
 
   const supabase = await createServerSupabaseClient();
+  const cookieStore = await cookies();
 
-  const [{ user: authUser }, detail] = await Promise.all([getAuthUser(supabase), fetchDetailPreview(slug, id)]);
+  const [{ user: authUser }, detail] = await Promise.all([
+    getAuthUser(supabase, cookieStore.getAll()),
+    fetchDetailPreview(slug, id),
+  ]);
 
   if (!detail) {
     notFound();

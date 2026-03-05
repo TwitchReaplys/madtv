@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { AccountMenu } from "@/components/account-menu";
@@ -35,7 +36,8 @@ export default async function RootLayout({
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const supabase = await createServerSupabaseClient();
-      const { user: authUser } = await getAuthUser(supabase);
+      const cookieStore = await cookies();
+      const { user: authUser } = await getAuthUser(supabase, cookieStore.getAll());
       user = authUser;
     } catch {
       user = null;

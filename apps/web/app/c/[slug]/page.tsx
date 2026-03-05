@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { CreatorHeader } from "@/components/creator/creator-header";
@@ -66,8 +67,8 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   const checkoutCancel = query.checkout === "cancel" ? "Checkout was canceled." : null;
 
   const supabase = await createServerSupabaseClient();
-
-  const { user } = await getAuthUser(supabase);
+  const cookieStore = await cookies();
+  const { user } = await getAuthUser(supabase, cookieStore.getAll());
 
   const { data: creator, error: creatorError } = await getCreatorBySlug(slug);
 

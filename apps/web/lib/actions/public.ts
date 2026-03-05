@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -42,7 +43,8 @@ export async function createCommentAction(formData: FormData) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { user } = await getAuthUser(supabase);
+  const cookieStore = await cookies();
+  const { user } = await getAuthUser(supabase, cookieStore.getAll());
 
   if (!user) {
     redirect(`/login?next=/c/${parsed.data.creatorSlug}/posts/${parsed.data.postId}`);

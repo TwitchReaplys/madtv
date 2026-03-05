@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,8 @@ export default async function ForCreatorsPage() {
   if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     try {
       const supabase = await createServerSupabaseClient();
-      const { user: authUser } = await getAuthUser(supabase);
+      const cookieStore = await cookies();
+      const { user: authUser } = await getAuthUser(supabase, cookieStore.getAll());
       user = authUser;
     } catch {
       user = null;
