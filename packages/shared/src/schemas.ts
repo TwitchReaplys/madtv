@@ -11,6 +11,7 @@ export const creatorSchema = z.object({
     .max(50)
     .regex(slugRegex, "Slug must be lowercase letters, numbers and hyphens"),
   title: z.string().trim().min(2).max(120),
+  tagline: z.string().trim().max(180).optional().or(z.literal("")),
   about: z.string().trim().max(5000).optional().or(z.literal("")),
   accentColor: z
     .string()
@@ -21,7 +22,10 @@ export const creatorSchema = z.object({
   coverImageUrl: z.string().url().max(1000).optional().or(z.literal("")),
   avatarUrl: z.string().url().max(1000).optional().or(z.literal("")),
   seoDescription: z.string().trim().max(320).optional().or(z.literal("")),
-  links: z.string().trim().max(5000).optional().or(z.literal("")),
+  instagramUrl: z.string().url().max(1000).optional().or(z.literal("")),
+  tiktokUrl: z.string().url().max(1000).optional().or(z.literal("")),
+  youtubeUrl: z.string().url().max(1000).optional().or(z.literal("")),
+  websiteUrl: z.string().url().max(1000).optional().or(z.literal("")),
 });
 
 export const tierCreateSchema = z.object({
@@ -99,6 +103,12 @@ export const bunnyCreateUploadSchema = z.object({
 export const bunnyEmbedTokenSchema = z.object({
   videoId: z.string().trim().min(3),
   libraryId: z.string().trim().optional(),
+});
+
+export const commentCreateSchema = z.object({
+  postId: z.string().uuid(),
+  creatorSlug: z.string().trim().min(1).max(120),
+  body: z.string().trim().min(1).max(2000),
 });
 
 export const stripeEventJobSchema = z.object({

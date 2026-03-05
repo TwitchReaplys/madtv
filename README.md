@@ -4,6 +4,8 @@ Multi-creator subscription platform MVP (HeroHero-like), now extended with:
 - modern mobile-first UI (Tailwind + Radix-style components)
 - dark mode (system + manual toggle)
 - creator microsites with theme accent + locked post teasers
+- audience-first public IA (`/`, `/explore`, `/for-creators`)
+- post comments gated by active membership or creator admin
 - Redis queue + BullMQ worker for Stripe event processing
 
 ## Monorepo structure
@@ -48,8 +50,12 @@ Dark mode:
 
 ### Public creator pages
 
+- `/` (audience-first landing)
+- `/explore` (public creator directory)
+- `/for-creators` (creator acquisition page)
+
 - `/c/[slug]`:
-  - cover/avatar/title/bio
+  - cover/avatar/title/tagline/bio/social links
   - tier cards near top
   - locked teasers for gated posts
   - sticky mobile subscribe CTA for non-members
@@ -58,6 +64,8 @@ Dark mode:
 - `/c/[slug]/posts/[id]`:
   - full content for authorized users
   - paywall panel for unauthorized users with subscribe CTA
+  - comments section (labelled `Komentáře k videu` when a Bunny video is attached)
+  - comment write gate: active subscriber (rank >= 1) or creator admin
 
 SEO:
 - dynamic metadata via `generateMetadata` on creator and post routes
@@ -87,14 +95,19 @@ Base migration:
 
 Add-on migration:
 - `supabase/migrations/20260305110000_creator_theme_and_previews.sql`
+- `supabase/migrations/20260305130000_explore_and_comments.sql`
 
 Added fields:
 - `creators.accent_color`
 - `creators.cover_image_url`
 - `creators.avatar_url`
 - `creators.seo_description`
-- `creators.links`
+- `creators.tagline`
+- `creators.social_links`
 - `post_assets.meta`
+
+Added view:
+- `creator_explore` (public list view with creator data + starting price)
 
 Added SQL functions for safe public previews:
 - `creator_post_previews(p_creator_id uuid)`
@@ -123,6 +136,7 @@ Apply migrations (example):
 ```bash
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260304213000_init.sql
 psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305110000_creator_theme_and_previews.sql
+psql "$SUPABASE_DB_URL" -f supabase/migrations/20260305130000_explore_and_comments.sql
 ```
 
 Run web:
@@ -162,10 +176,10 @@ Health endpoint:
 
 ## Manual acceptance checks (UI + flow)
 
-1. Landing page has hero + feature grid + pricing cards + FAQ.
-2. Creator page supports dark mode and shows tier cards + locked previews.
-3. On mobile, non-member sees sticky subscribe CTA.
-4. Stripe webhook stores event and enqueues job.
-5. Worker processes `stripe:event` and updates `subscriptions`.
-6. Unauthorized post detail shows paywall panel.
-7. Authorized member sees full gated content + Bunny video.
+1. Landing page is audience-first and top nav has `Explore`, `Jak to funguje`, `Pro tvůrce`, `Přihlásit se/Účet`.
+2. `/explore` lists creators with avatar, tagline, starting price and social icons.
+3. Creator page supports dark mode and shows tier cards + locked previews + sticky mobile subscribe CTA.
+4. Unauthorized post detail shows paywall panel.
+5. Authorized member sees full gated content + Bunny video.
+6. Comments are readable only when post is viewable and writable only by active subscribers/admins.
+7. Stripe webhook stores event and enqueues job; worker processes `stripe:event` and updates `subscriptions`.

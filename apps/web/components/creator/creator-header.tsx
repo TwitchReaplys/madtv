@@ -1,31 +1,67 @@
+import type { ComponentType } from "react";
 import Link from "next/link";
+import { Globe, Instagram, Music2, Youtube } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
+type SocialLinks = {
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  website?: string;
+};
+
 type CreatorHeaderProps = {
   slug: string;
   title: string;
+  tagline?: string | null;
   about?: string | null;
   coverImageUrl?: string | null;
   avatarUrl?: string | null;
-  links?: Array<{ label: string; url: string }>;
+  socialLinks?: SocialLinks | null;
   ownerView?: boolean;
 };
+
+const socialConfig: Array<{
+  key: keyof SocialLinks;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}> = [
+  { key: "instagram", label: "Instagram", icon: Instagram },
+  { key: "tiktok", label: "TikTok", icon: Music2 },
+  { key: "youtube", label: "YouTube", icon: Youtube },
+  { key: "website", label: "Web", icon: Globe },
+];
 
 export function CreatorHeader({
   slug,
   title,
+  tagline,
   about,
   coverImageUrl,
   avatarUrl,
-  links = [],
+  socialLinks,
   ownerView = false,
 }: CreatorHeaderProps) {
+  const socialItems = socialConfig
+    .map((item) => {
+      const rawUrl = socialLinks?.[item.key];
+      if (!rawUrl) {
+        return null;
+      }
+
+      return {
+        ...item,
+        url: rawUrl,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
   return (
     <Card className="overflow-hidden">
-      <div className="relative h-40 w-full bg-gradient-to-r from-[var(--accent)]/35 via-[var(--accent)]/15 to-sky-400/20 sm:h-52">
+      <div className="relative h-40 w-full bg-gradient-to-r from-[var(--accent)]/35 via-[var(--accent)]/15 to-sky-400/20 sm:h-56">
         {coverImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={coverImageUrl} alt={`${title} cover`} className="h-full w-full object-cover" />
@@ -43,6 +79,7 @@ export function CreatorHeader({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Creator page</p>
               <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+              {tagline ? <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{tagline}</p> : null}
             </div>
           </div>
 
@@ -58,12 +95,13 @@ export function CreatorHeader({
 
         {about ? <p className="mt-5 max-w-3xl whitespace-pre-wrap text-sm leading-7 text-zinc-600 dark:text-zinc-300">{about}</p> : null}
 
-        {links.length > 0 ? (
+        {socialItems.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
-            {links.map((link) => (
-              <Button key={`${link.label}:${link.url}`} asChild variant="outline" size="sm">
-                <a href={link.url} target="_blank" rel="noreferrer">
-                  {link.label || link.url}
+            {socialItems.map((item) => (
+              <Button key={item.key} asChild variant="outline" size="sm">
+                <a href={item.url} target="_blank" rel="noreferrer">
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
                 </a>
               </Button>
             ))}

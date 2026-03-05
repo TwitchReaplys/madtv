@@ -24,7 +24,7 @@ async function getCreatorBySlug(slug: string) {
 
   return supabase
     .from("creators")
-    .select("id, slug, title, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, links")
+    .select("id, slug, title, tagline, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, social_links")
     .eq("slug", slug)
     .maybeSingle();
 }
@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const description = creator.seo_description || creator.about || `${creator.title} on MadTV`;
+  const description = creator.seo_description || creator.tagline || creator.about || `${creator.title} on MadTV`;
 
   return {
     title: `${creator.title} | MadTV`,
@@ -103,27 +103,15 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
     has_video: boolean;
   }>;
 
-  const links = Array.isArray(creator.links)
-    ? creator.links
-        .map((item) => {
-          if (!item || typeof item !== "object") {
-            return null;
-          }
-
-          const url = "url" in item && typeof item.url === "string" ? item.url : "";
-          const label = "label" in item && typeof item.label === "string" ? item.label : "";
-
-          if (!url) {
-            return null;
-          }
-
-          return {
-            label: label || url,
-            url,
-          };
+  const socialLinks =
+    creator.social_links && typeof creator.social_links === "object" && !Array.isArray(creator.social_links)
+      ? (creator.social_links as {
+          instagram?: string;
+          tiktok?: string;
+          youtube?: string;
+          website?: string;
         })
-        .filter((entry): entry is { label: string; url: string } => entry !== null)
-    : [];
+      : null;
 
   const creatorStyle = {
     "--accent": creator.accent_color || "#16a34a",
@@ -134,10 +122,11 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
       <CreatorHeader
         slug={creator.slug}
         title={creator.title}
+        tagline={creator.tagline}
         about={creator.about}
         coverImageUrl={creator.cover_image_url}
         avatarUrl={creator.avatar_url}
-        links={links}
+        socialLinks={socialLinks}
         ownerView={isOwner}
       />
 

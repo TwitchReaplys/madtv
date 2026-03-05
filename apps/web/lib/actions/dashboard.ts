@@ -27,36 +27,31 @@ function getTextValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function parseCreatorLinks(rawValue: string) {
-  const lines = rawValue
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
+function buildCreatorSocialLinks(input: {
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  youtubeUrl?: string;
+  websiteUrl?: string;
+}) {
+  const socialLinks: Record<string, string> = {};
 
-  return lines
-    .map((line) => {
-      const [labelCandidate, urlCandidate] = line.includes("|")
-        ? line.split("|", 2)
-        : [line, line];
+  if (input.instagramUrl) {
+    socialLinks.instagram = input.instagramUrl;
+  }
 
-      const label = labelCandidate.trim();
-      const url = urlCandidate.trim();
+  if (input.tiktokUrl) {
+    socialLinks.tiktok = input.tiktokUrl;
+  }
 
-      try {
-        const parsedUrl = new URL(url);
-        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-          return null;
-        }
+  if (input.youtubeUrl) {
+    socialLinks.youtube = input.youtubeUrl;
+  }
 
-        return {
-          label,
-          url: parsedUrl.toString(),
-        };
-      } catch {
-        return null;
-      }
-    })
-    .filter((entry): entry is { label: string; url: string } => entry !== null);
+  if (input.websiteUrl) {
+    socialLinks.website = input.websiteUrl;
+  }
+
+  return socialLinks;
 }
 
 async function requireUser() {
@@ -88,12 +83,16 @@ export async function upsertCreatorAction(formData: FormData) {
   const parsed = creatorSchema.safeParse({
     slug: getTextValue(formData, "slug"),
     title: getTextValue(formData, "title"),
+    tagline: getTextValue(formData, "tagline"),
     about: getTextValue(formData, "about"),
     accentColor: getTextValue(formData, "accentColor"),
     coverImageUrl: getTextValue(formData, "coverImageUrl"),
     avatarUrl: getTextValue(formData, "avatarUrl"),
     seoDescription: getTextValue(formData, "seoDescription"),
-    links: getTextValue(formData, "links"),
+    instagramUrl: getTextValue(formData, "instagramUrl"),
+    tiktokUrl: getTextValue(formData, "tiktokUrl"),
+    youtubeUrl: getTextValue(formData, "youtubeUrl"),
+    websiteUrl: getTextValue(formData, "websiteUrl"),
   });
 
   if (!parsed.success) {
@@ -114,12 +113,13 @@ export async function upsertCreatorAction(formData: FormData) {
       .update({
         slug: parsed.data.slug,
         title: parsed.data.title,
+        tagline: parsed.data.tagline || null,
         about: parsed.data.about || null,
         accent_color: parsed.data.accentColor || "#16a34a",
         cover_image_url: parsed.data.coverImageUrl || null,
         avatar_url: parsed.data.avatarUrl || null,
         seo_description: parsed.data.seoDescription || null,
-        links: parseCreatorLinks(parsed.data.links || ""),
+        social_links: buildCreatorSocialLinks(parsed.data),
       })
       .eq("id", existingCreator.id);
 
@@ -129,6 +129,8 @@ export async function upsertCreatorAction(formData: FormData) {
 
     revalidatePath(`/c/${existingCreator.slug}`);
     revalidatePath(`/c/${parsed.data.slug}`);
+    revalidatePath("/");
+    revalidatePath("/explore");
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/creator");
     redirectWithMessage("/dashboard/creator", "success", "Creator profile updated");
@@ -138,12 +140,13 @@ export async function upsertCreatorAction(formData: FormData) {
     owner_user_id: user.id,
     slug: parsed.data.slug,
     title: parsed.data.title,
+    tagline: parsed.data.tagline || null,
     about: parsed.data.about || null,
     accent_color: parsed.data.accentColor || "#16a34a",
     cover_image_url: parsed.data.coverImageUrl || null,
     avatar_url: parsed.data.avatarUrl || null,
     seo_description: parsed.data.seoDescription || null,
-    links: parseCreatorLinks(parsed.data.links || ""),
+    social_links: buildCreatorSocialLinks(parsed.data),
   });
 
   if (error) {
@@ -151,6 +154,8 @@ export async function upsertCreatorAction(formData: FormData) {
   }
 
   revalidatePath(`/c/${parsed.data.slug}`);
+  revalidatePath("/");
+  revalidatePath("/explore");
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/creator");
   redirectWithMessage("/dashboard/creator", "success", "Creator profile created");

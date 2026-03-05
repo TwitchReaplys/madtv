@@ -21,29 +21,19 @@ export default async function CreatorSettingsPage({ searchParams }: PageProps) {
 
   const { data: creator } = await supabase
     .from("creators")
-    .select("id, slug, title, about, accent_color, cover_image_url, avatar_url, seo_description, links")
+    .select("id, slug, title, tagline, about, accent_color, cover_image_url, avatar_url, seo_description, social_links")
     .eq("owner_user_id", user.id)
     .maybeSingle();
 
-  const linksValue = Array.isArray(creator?.links)
-    ? creator?.links
-        .map((item) => {
-          if (!item || typeof item !== "object") {
-            return null;
-          }
+  const socialLinks =
+    creator?.social_links && typeof creator.social_links === "object" && !Array.isArray(creator.social_links)
+      ? (creator.social_links as Record<string, unknown>)
+      : {};
 
-          const maybeLabel = "label" in item && typeof item.label === "string" ? item.label : "";
-          const maybeUrl = "url" in item && typeof item.url === "string" ? item.url : "";
-
-          if (!maybeUrl) {
-            return null;
-          }
-
-          return maybeLabel ? `${maybeLabel}|${maybeUrl}` : maybeUrl;
-        })
-        .filter((line): line is string => Boolean(line))
-        .join("\n")
-    : "";
+  const instagramUrl = typeof socialLinks.instagram === "string" ? socialLinks.instagram : "";
+  const tiktokUrl = typeof socialLinks.tiktok === "string" ? socialLinks.tiktok : "";
+  const youtubeUrl = typeof socialLinks.youtube === "string" ? socialLinks.youtube : "";
+  const websiteUrl = typeof socialLinks.website === "string" ? socialLinks.website : "";
 
   return (
     <Card>
@@ -76,6 +66,15 @@ export default async function CreatorSettingsPage({ searchParams }: PageProps) {
           </div>
 
           <div>
+            <label className="mb-1 block text-sm font-medium">Tagline</label>
+            <Input
+              name="tagline"
+              defaultValue={creator?.tagline ?? ""}
+              placeholder="Krátký one-liner pro explore a veřejnou hlavičku"
+            />
+          </div>
+
+          <div>
             <label className="mb-1 block text-sm font-medium">About</label>
             <Textarea name="about" rows={6} defaultValue={creator?.about ?? ""} />
           </div>
@@ -98,11 +97,7 @@ export default async function CreatorSettingsPage({ searchParams }: PageProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium">Cover image URL</label>
-              <Input
-                name="coverImageUrl"
-                defaultValue={creator?.cover_image_url ?? ""}
-                placeholder="https://..."
-              />
+              <Input name="coverImageUrl" defaultValue={creator?.cover_image_url ?? ""} placeholder="https://..." />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Avatar image URL</label>
@@ -110,15 +105,23 @@ export default async function CreatorSettingsPage({ searchParams }: PageProps) {
             </div>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Links (one per line, optional)</label>
-            <Textarea
-              name="links"
-              rows={4}
-              defaultValue={linksValue}
-              placeholder={"YouTube|https://youtube.com/@handle\\nhttps://instagram.com/handle"}
-            />
-            <p className="mt-1 text-xs text-zinc-500">Use `Label|URL` or only `URL` per line.</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Instagram URL</label>
+              <Input name="instagramUrl" defaultValue={instagramUrl} placeholder="https://instagram.com/..." />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">TikTok URL</label>
+              <Input name="tiktokUrl" defaultValue={tiktokUrl} placeholder="https://www.tiktok.com/@..." />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">YouTube URL</label>
+              <Input name="youtubeUrl" defaultValue={youtubeUrl} placeholder="https://youtube.com/@..." />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium">Website URL</label>
+              <Input name="websiteUrl" defaultValue={websiteUrl} placeholder="https://..." />
+            </div>
           </div>
 
           <Button type="submit">{creator ? "Save changes" : "Create profile"}</Button>

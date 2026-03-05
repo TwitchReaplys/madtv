@@ -4,17 +4,22 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { createCommentAction } from "@/lib/actions/public";
 import { PaywallPanel } from "@/components/creator/paywall-panel";
 import type { PublicTier } from "@/components/creator/tier-cards";
+import { Notice } from "@/components/notice";
 import { VideoEmbed } from "@/components/video-embed";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 type DetailPreview = {
@@ -31,6 +36,24 @@ type DetailPreview = {
   min_tier_rank: number | null;
   published_at: string;
   has_access: boolean;
+};
+
+type PostComment = {
+  id: string;
+  body: string;
+  created_at: string;
+  profiles:
+    | {
+        display_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      }
+    | {
+        display_name: string | null;
+        username: string | null;
+        avatar_url: string | null;
+      }[]
+    | null;
 };
 
 async function fetchDetailPreview(slug: string, id: string) {
@@ -71,8 +94,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function CreatorPostDetailPage({ params }: PageProps) {
+function getMessage(searchParams: Record<string, string | string[] | undefined>, key: string) {
+  const value = searchParams[key];
+  return typeof value === "string" ? value : null;
+}
+
+export default async function CreatorPostDetailPage({ params, searchParams }: PageProps) {
   const { slug, id } = await params;
+  const query = await searchParams;
 
   const supabase = await createServerSupabaseClient();
 
@@ -90,8 +119,9 @@ export default async function CreatorPostDetailPage({ params }: PageProps) {
   } as CSSProperties;
 
   const isAuthenticated = Boolean(authUser.user);
+  const requiredRank = detail.visibility === "tier" ? detail.min_tier_rank ?? 1 : 1;
 
-  const [{ data: tiers }, { data: assets }] = await Promise.all([
+  const [{ data: tiers }, { data: assets }, { data: comments }] = await Promise.all([
     supabase
       .from("tiers")
       .select("id, name, description, price_cents, currency, rank")
@@ -99,20 +129,45 @@ export default async function CreatorPostDetailPage({ params }: PageProps) {
       .eq("is_active", true)
       .order("rank", { ascending: true }),
     detail.has_access
+      ? supabase.from("post_assets").select("id, type, bunny_video_id, bunny_library_id").eq("post_id", detail.post_id)
+      : Promise.resolve({ data: [] as never[] }),
+    detail.has_access
       ? supabase
-          .from("post_assets")
-          .select("id, type, bunny_video_id, bunny_library_id")
+          .from("comments")
+          .select("id, body, created_at, profiles:user_id ( display_name, username, avatar_url )")
           .eq("post_id", detail.post_id)
+          .order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as never[] }),
   ]);
 
-  const requiredRank = detail.visibility === "tier" ? detail.min_tier_rank ?? 1 : 1;
+  let activeRank = 0;
+  let isCreatorAdmin = false;
+
+  if (isAuthenticated) {
+    const [{ data: rank }, { data: admin }] = await Promise.all([
+      supabase.rpc("active_subscription_rank", {
+        p_creator_id: detail.creator_id,
+      }),
+      supabase.rpc("is_creator_admin", {
+        p_creator_id: detail.creator_id,
+      }),
+    ]);
+
+    activeRank = Number(rank ?? 0);
+    isCreatorAdmin = Boolean(admin);
+  }
+
+  const canComment = activeRank >= 1 || isCreatorAdmin;
+  const hasVideo = (assets ?? []).some((asset) => asset.type === "bunny_video");
+
+  const commentError = getMessage(query, "commentError");
+  const commentSuccess = getMessage(query, "commentSuccess");
 
   return (
     <div className="space-y-6" style={creatorStyle}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href={`/c/${slug}`} className="text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-300">
-          ← Back to creator page
+          ← Zpět na profil tvůrce
         </Link>
         <Badge variant="secondary">
           {detail.visibility}
@@ -123,7 +178,7 @@ export default async function CreatorPostDetailPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl tracking-tight">{detail.title}</CardTitle>
-          <p className="text-xs text-zinc-500">Published {new Date(detail.published_at).toLocaleString()}</p>
+          <p className="text-xs text-zinc-500">Publikováno {new Date(detail.published_at).toLocaleString()}</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {detail.has_access ? (
@@ -152,7 +207,7 @@ export default async function CreatorPostDetailPage({ params }: PageProps) {
               {detail.body_preview ? (
                 <p className="whitespace-pre-wrap text-sm leading-7 text-zinc-700 dark:text-zinc-200">{detail.body_preview}</p>
               ) : (
-                <p className="text-sm text-zinc-600 dark:text-zinc-300">This post is available for members.</p>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">Tento příspěvek je dostupný jen členům.</p>
               )}
 
               <PaywallPanel
@@ -165,6 +220,79 @@ export default async function CreatorPostDetailPage({ params }: PageProps) {
           )}
         </CardContent>
       </Card>
+
+      {detail.has_access ? (
+        <section id="comments" className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold tracking-tight">{hasVideo ? "Komentáře k videu" : "Komentáře"}</h2>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">Sdílej feedback, otázky a reakce s komunitou.</p>
+          </div>
+
+          <Notice message={commentSuccess} variant="success" />
+          <Notice message={commentError} variant="error" />
+
+          {!isAuthenticated ? (
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">Pro přidání komentáře se přihlas do účtu.</p>
+                <Button asChild size="sm">
+                  <Link href={`/login?next=/c/${slug}/posts/${id}`}>Přihlásit se</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : !canComment ? (
+            <Card>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">Komentáře mohou psát aktivní členové tvůrce.</p>
+                <Button asChild size="sm">
+                  <Link href={`/c/${slug}#tiers-${slug}`}>Předplatit členství</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <form action={createCommentAction} className="space-y-3">
+                  <input type="hidden" name="postId" value={id} />
+                  <input type="hidden" name="creatorSlug" value={slug} />
+                  <Textarea name="body" rows={4} required placeholder="Napiš komentář..." />
+                  <Button type="submit" size="sm">
+                    Odeslat komentář
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="space-y-3">
+            {(comments as PostComment[] | null)?.length ? (
+              (comments as PostComment[]).map((comment) => {
+                const profile = Array.isArray(comment.profiles) ? comment.profiles[0] : comment.profiles;
+                const authorName = profile?.display_name || profile?.username || "Člen komunity";
+
+                return (
+                  <Card key={comment.id}>
+                    <CardContent className="space-y-2 pt-4">
+                      <div className="flex items-center gap-2 text-xs text-zinc-500">
+                        <span className="font-medium text-zinc-700 dark:text-zinc-200">{authorName}</span>
+                        <span>•</span>
+                        <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm leading-6 text-zinc-700 dark:text-zinc-300">{comment.body}</p>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card>
+                <CardContent className="pt-6 text-sm text-zinc-600 dark:text-zinc-300">
+                  Zatím žádné komentáře. Buď první, kdo zareaguje.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

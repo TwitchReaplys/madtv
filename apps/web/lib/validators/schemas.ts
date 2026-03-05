@@ -1,4 +1,5 @@
 export {
+  commentCreateSchema,
   bunnyCreateUploadSchema,
   bunnyEmbedTokenSchema,
   checkoutSchema,
