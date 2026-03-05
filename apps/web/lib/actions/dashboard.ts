@@ -490,52 +490,62 @@ export async function startStripeConnectOnboardingAction(formData: FormData) {
   }
 
   const emailVerifiedAt = creator.onboarding_email_verified_at ?? getUserEmailVerifiedAt(user);
-  if (!emailVerifiedAt) {
-    redirectWithMessage(returnPath, "error", "Verify your account email before Stripe Connect onboarding");
-  }
-
   const stripe = getStripeClient();
   let stripeConnectAccountId = creator.stripe_connect_account_id;
 
-  if (!stripeConnectAccountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      country: creator.address_country.toUpperCase(),
-      email: creator.contact_email,
-      capabilities: {
-        transfers: {
-          requested: true,
+  try {
+    if (!stripeConnectAccountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        country: creator.address_country.toUpperCase(),
+        email: creator.contact_email,
+        capabilities: {
+          card_payments: {
+            requested: true,
+          },
+          transfers: {
+            requested: true,
+          },
         },
-      },
-      metadata: {
-        creatorId: creator.id,
-        creatorSlug: creator.slug,
-        ownerUserId: user.id,
-      },
-      business_profile: {
-        name: creator.title,
-        product_description: creator.content_focus.slice(0, 1000),
-      },
-    });
+        metadata: {
+          creatorId: creator.id,
+          creatorSlug: creator.slug,
+          ownerUserId: user.id,
+        },
+        business_profile: {
+          name: creator.title,
+          product_description: creator.content_focus.slice(0, 1000),
+        },
+      });
 
-    stripeConnectAccountId = account.id;
+      stripeConnectAccountId = account.id;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create Stripe Connect account";
+    redirectWithMessage(returnPath, "error", message);
   }
 
   const refreshUrl = buildStripeConnectCallbackUrl(parsed.data.creatorId, "refresh");
   const returnUrl = buildStripeConnectCallbackUrl(parsed.data.creatorId, "return");
 
-  const accountLink = await stripe.accountLinks.create({
-    account: stripeConnectAccountId,
-    type: "account_onboarding",
-    refresh_url: refreshUrl,
-    return_url: returnUrl,
-  });
+  let accountLink;
+  try {
+    accountLink = await stripe.accountLinks.create({
+      account: stripeConnectAccountId,
+      type: "account_onboarding",
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create Stripe onboarding link";
+    redirectWithMessage(returnPath, "error", message);
+  }
 
   const { error: updateError } = await supabase
     .from("creators")
     .update({
       stripe_connect_account_id: stripeConnectAccountId,
-      onboarding_email_verified_at: emailVerifiedAt,
+      onboarding_email_verified_at: emailVerifiedAt ?? null,
       onboarding_status: creator.onboarding_status === "approved" || creator.onboarding_status === "rejected"
         ? creator.onboarding_status
         : "stripe_pending",

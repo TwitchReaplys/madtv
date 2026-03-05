@@ -19,6 +19,54 @@ type SubscriptionMetadata = {
   tierId?: string;
 };
 
+function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice) {
+  const invoiceLike = invoice as Stripe.Invoice & {
+    subscription?: string | { id?: string } | null;
+    parent?: {
+      subscription_details?: {
+        subscription?: string | { id?: string } | null;
+      } | null;
+    } | null;
+  };
+
+  const direct = invoiceLike.subscription;
+  if (typeof direct === "string") {
+    return direct;
+  }
+
+  if (direct && typeof direct === "object" && typeof direct.id === "string") {
+    return direct.id;
+  }
+
+  const nested = invoiceLike.parent?.subscription_details?.subscription;
+  if (typeof nested === "string") {
+    return nested;
+  }
+
+  if (nested && typeof nested === "object" && typeof nested.id === "string") {
+    return nested.id;
+  }
+
+  return null;
+}
+
+function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
+  const subLike = subscription as Stripe.Subscription & {
+    current_period_end?: number | null;
+  };
+
+  if (typeof subLike.current_period_end === "number") {
+    return new Date(subLike.current_period_end * 1000).toISOString();
+  }
+
+  const firstItem = subscription.items.data[0];
+  if (typeof firstItem?.current_period_end === "number") {
+    return new Date(firstItem.current_period_end * 1000).toISOString();
+  }
+
+  return null;
+}
+
 async function getUserIdFromCustomerId(customerId: string) {
   const { data: profile, error } = await supabase
     .from("profiles")
@@ -83,17 +131,13 @@ async function upsertSubscriptionFromStripe(
     throw new Error(`Could not resolve user/creator for Stripe subscription ${subscription.id}`);
   }
 
-  const currentPeriodEnd = firstItem?.current_period_end
-    ? new Date(firstItem.current_period_end * 1000).toISOString()
-    : null;
-
   const { error } = await supabase.from("subscriptions").upsert(
     {
       user_id: userId,
       creator_id: creatorId,
       tier_id: tierId,
       status: subscription.status,
-      current_period_end: currentPeriodEnd,
+      current_period_end: getCurrentPeriodEndIso(subscription),
       provider: "stripe",
       provider_subscription_id: subscription.id,
     },
@@ -151,9 +195,7 @@ async function processStripeEvent(eventId: string) {
     case "invoice.paid":
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
-      const subscriptionRef = invoice.parent?.subscription_details?.subscription;
-      const subscriptionId =
-        typeof subscriptionRef === "string" ? subscriptionRef : subscriptionRef?.id;
+      const subscriptionId = getSubscriptionIdFromInvoice(invoice);
 
       if (subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);

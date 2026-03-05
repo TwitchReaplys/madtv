@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 import { enqueueStripeEvent } from "@/lib/queue";
+import { processStripeEventPayload } from "@/lib/stripe/webhook-processor";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getStripeClient } from "@/lib/stripe";
 
@@ -49,8 +50,24 @@ export async function POST(request: Request) {
   try {
     await enqueueStripeEvent(event.id);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to enqueue Stripe event";
-    return NextResponse.json({ error: message }, { status: 500 });
+    try {
+      await processStripeEventPayload({
+        supabase,
+        stripe,
+        event,
+      });
+    } catch (inlineError) {
+      const queueErrorMessage = error instanceof Error ? error.message : "Failed to enqueue Stripe event";
+      const inlineErrorMessage = inlineError instanceof Error ? inlineError.message : "Failed to process Stripe event inline";
+      return NextResponse.json(
+        {
+          error: `Queue error: ${queueErrorMessage}; inline error: ${inlineErrorMessage}`,
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ received: true, queued: false, processedInline: true, duplicate: isDuplicate });
   }
 
   return NextResponse.json({ received: true, queued: true, duplicate: isDuplicate });

@@ -112,6 +112,7 @@ SEO:
   2. persist event in `stripe_events` (idempotency)
   3. enqueue `stripe:event` job
   4. return `200` quickly
+  - if Redis queue is temporarily unavailable, webhook falls back to inline subscription sync for critical Stripe events
 
 Worker (`apps/worker`) processes jobs:
 - `stripe:event`

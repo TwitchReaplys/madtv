@@ -95,7 +95,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
             <p className="text-xs text-emerald-600 dark:text-emerald-300">Email ověřen: {new Date(emailVerifiedAt!).toLocaleString()}</p>
           ) : (
             <p className="text-xs text-amber-600 dark:text-amber-300">
-              Pro přechod na Stripe krok musí být ověřený email účtu.
+              Email není ověřen. Doporučeno dokončit ověření, ale Stripe onboarding může pokračovat.
             </p>
           )}
         </CardContent>
