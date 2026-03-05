@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { LogOut, LayoutDashboard, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,28 @@ type AccountMenuProps = {
 };
 
 export function AccountMenu({ email }: AccountMenuProps) {
+  const router = useRouter();
+  const [pendingLogout, setPendingLogout] = useState(false);
+
+  async function handleLogout() {
+    if (pendingLogout) {
+      return;
+    }
+
+    setPendingLogout(true);
+
+    try {
+      await fetch("/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      router.push("/");
+      router.refresh();
+      setPendingLogout(false);
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,11 +59,15 @@ export function AccountMenu({ email }: AccountMenuProps) {
             Dashboard
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/logout">
-            <LogOut className="h-4 w-4" />
-            Odhlásit se
-          </Link>
+        <DropdownMenuItem
+          disabled={pendingLogout}
+          onSelect={(event) => {
+            event.preventDefault();
+            void handleLogout();
+          }}
+        >
+          <LogOut className="h-4 w-4" />
+          {pendingLogout ? "Odhlašuji..." : "Odhlásit se"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

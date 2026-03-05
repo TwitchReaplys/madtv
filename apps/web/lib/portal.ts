@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 
-import { getAuthUser } from "@/lib/supabase/auth";
+import { getVerifiedAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type CreatorAccess = {
@@ -14,8 +13,7 @@ export type CreatorAccess = {
 
 export async function requireDashboardUser() {
   const supabase = await createServerSupabaseClient();
-  const cookieStore = await cookies();
-  const { user } = await getAuthUser(supabase, cookieStore.getAll());
+  const { user } = await getVerifiedAuthUser(supabase);
 
   if (!user) {
     redirect("/login");
@@ -28,7 +26,8 @@ export async function requireDashboardUser() {
     .maybeSingle();
 
   if (profile?.is_banned) {
-    redirect("/logout");
+    await supabase.auth.signOut();
+    redirect("/login?error=Account+disabled");
   }
 
   const { data: memberships } = await supabase

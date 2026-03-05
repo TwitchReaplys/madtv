@@ -22,6 +22,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing Bunny Stream env vars" }, { status: 500 });
   }
 
+  if (!parsed.data.creatorId) {
+    return NextResponse.json({ error: "creatorId is required" }, { status: 400 });
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const { user } = await getVerifiedAuthUser(supabase);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: isAdmin } = await supabase.rpc("is_creator_admin", {
+    p_creator_id: parsed.data.creatorId,
+  });
+
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const title = parsed.data.title?.trim() || `upload-${Date.now()}`;
 
   const response = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos`, {
@@ -53,33 +72,24 @@ export async function POST(request: Request) {
   const expirationTime = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
   const signature = sha256Hex(`${libraryId}${apiKey}${expirationTime}${videoId}`);
 
-  if (parsed.data.creatorId) {
-    const supabase = await createServerSupabaseClient();
-    const { user } = await getVerifiedAuthUser(supabase);
+  const { error: upsertError } = await supabase.from("creator_videos").upsert(
+    {
+      creator_id: parsed.data.creatorId,
+      title,
+      bunny_video_id: videoId,
+      status: "uploading",
+      meta: {
+        bunny_library_id: libraryId,
+        created_via: "create-upload-route",
+      },
+    },
+    {
+      onConflict: "bunny_video_id",
+    },
+  );
 
-    if (user) {
-      const { data: isAdmin } = await supabase.rpc("is_creator_admin", {
-        p_creator_id: parsed.data.creatorId,
-      });
-
-      if (isAdmin) {
-        await supabase.from("creator_videos").upsert(
-          {
-            creator_id: parsed.data.creatorId,
-            title,
-            bunny_video_id: videoId,
-            status: "uploading",
-            meta: {
-              bunny_library_id: libraryId,
-              created_via: "create-upload-route",
-            },
-          },
-          {
-            onConflict: "bunny_video_id",
-          },
-        );
-      }
-    }
+  if (upsertError) {
+    return NextResponse.json({ error: upsertError.message }, { status: 500 });
   }
 
   return NextResponse.json({

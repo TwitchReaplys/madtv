@@ -41,16 +41,18 @@ export async function middleware(request: NextRequest) {
     }),
   });
 
-  const { user } = await getAuthUser(supabase, request.cookies.getAll());
+  const auth = await getAuthUser(supabase, request.cookies.getAll());
+  const user = auth.user;
+  const isVerified = auth.isVerified;
 
-  if (!user && isProtectedPath(request.nextUrl.pathname)) {
+  if (isProtectedPath(request.nextUrl.pathname) && (!user || !isVerified)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
+  if (user && isVerified && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

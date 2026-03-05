@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { enqueueAnalyticsAggregate } from "@/lib/queue";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getVerifiedAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -19,12 +20,34 @@ function todayUtcString() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getClientIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  if (!forwardedFor) {
+    return "";
+  }
+
+  return forwardedFor.split(",")[0]?.trim() ?? "";
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const parsed = analyticsEventSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid payload" }, { status: 400 });
+  }
+
+  const ip = getClientIp(request);
+  const ipHash = createHash("sha256").update(ip || "unknown").digest("hex");
+  const rateLimitWindow = Math.floor(Date.now() / 60_000);
+  const rateLimit = await checkRateLimit({
+    key: `rate:analytics:${ipHash}:${rateLimitWindow}`,
+    limit: 120,
+    windowSeconds: 120,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Too many analytics events" }, { status: 429 });
   }
 
   const supabase = await createServerSupabaseClient();

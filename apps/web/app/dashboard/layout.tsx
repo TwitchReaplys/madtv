@@ -27,9 +27,11 @@ export default async function DashboardLayout({
               {hasViewerAccess ? <Badge variant="secondary">Viewer</Badge> : null}
               {hasCreatorAccess ? <Badge variant="secondary">Creator</Badge> : null}
               {isPlatformAdmin ? <Badge variant="secondary">Platform Admin</Badge> : null}
-              <Button asChild variant="outline" size="sm">
-                <Link href="/logout">Odhlásit se</Link>
-              </Button>
+              <form action="/logout" method="post">
+                <Button variant="outline" size="sm" type="submit">
+                  Odhlásit se
+                </Button>
+              </form>
             </div>
           </div>
 
