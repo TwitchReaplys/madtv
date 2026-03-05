@@ -4,8 +4,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
 
@@ -18,8 +18,8 @@ services:
       - apps/web/.env.example
     environment:
       - REDIS_URL=redis://redis:6379
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - redis
 
