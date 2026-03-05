@@ -194,7 +194,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="stripe-connect">
         <CardHeader>
           <CardTitle>3) Stripe Connect</CardTitle>
         </CardHeader>

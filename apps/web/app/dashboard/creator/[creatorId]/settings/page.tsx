@@ -35,6 +35,10 @@ export default async function CreatorSettingsPage({ params }: PageProps) {
           <Link href={`/dashboard/creator/${creatorId}/onboarding`} className="underline">
             Open onboarding
           </Link>
+          <span>•</span>
+          <Link href={`/dashboard/creator/${creatorId}/onboarding#stripe-connect`} className="underline">
+            Stripe Connect step
+          </Link>
         </div>
       </CardContent>
     </Card>

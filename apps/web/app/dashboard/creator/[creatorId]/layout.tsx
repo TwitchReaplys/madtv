@@ -30,6 +30,9 @@ export default async function CreatorSectionLayout({ children, params }: LayoutP
               <Link href={`/dashboard/creator/${creatorId}/onboarding`}>Onboarding</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
+              <Link href={`/dashboard/creator/${creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
               <Link href={`/dashboard/creator/${creatorId}/profile`}>Profile</Link>
             </Button>
             <Button asChild size="sm" variant="outline">

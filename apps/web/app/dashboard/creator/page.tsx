@@ -144,6 +144,9 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
                   <Link href={`/dashboard/creator/${creator.creatorId}/onboarding`}>Onboarding</Link>
                 </Button>
                 <Button asChild size="sm" variant="outline">
+                  <Link href={`/dashboard/creator/${creator.creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
                   <Link href={`/dashboard/creator/${creator.creatorId}/profile`}>Profile</Link>
                 </Button>
                   <Button asChild size="sm" variant="outline">
