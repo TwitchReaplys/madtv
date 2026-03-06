@@ -14,44 +14,46 @@ export default async function DashboardLayout({
 }) {
   const { user, hasCreatorAccess, hasViewerAccess, isPlatformAdmin } = await requireDashboardUser();
 
+  const portalLinks = [
+    { href: "/dashboard/viewer", label: "Viewer portal", show: hasViewerAccess },
+    { href: "/dashboard/creator", label: "Creator portal", show: hasCreatorAccess },
+    { href: "/admin", label: "Admin", show: isPlatformAdmin },
+  ].filter((link) => link.show);
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="flex flex-col gap-4 pt-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+      <Card className="overflow-hidden">
+        <div className="bg-gradient-to-r from-[var(--accent)]/12 via-sky-500/10 to-transparent px-6 py-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Account workspace</p>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">{user.email}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {hasViewerAccess ? <Badge variant="secondary">Viewer</Badge> : null}
               {hasCreatorAccess ? <Badge variant="secondary">Creator</Badge> : null}
               {isPlatformAdmin ? <Badge variant="secondary">Platform Admin</Badge> : null}
-              <form action="/logout" method="post">
-                <Button variant="outline" size="sm" type="submit">
-                  Odhlásit se
-                </Button>
-              </form>
             </div>
           </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="secondary" size="sm">
-              <Link href="/dashboard/viewer">Viewer portal</Link>
-            </Button>
-            {hasCreatorAccess ? (
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/dashboard/creator">Creator portal</Link>
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            {portalLinks.map((portal) => (
+              <Button key={portal.href} asChild size="sm">
+                <Link href={portal.href}>{portal.label}</Link>
               </Button>
-            ) : null}
-            {isPlatformAdmin ? (
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/admin">Admin</Link>
+            ))}
+            <form action="/logout" method="post">
+              <Button variant="outline" size="sm" type="submit">
+                Odhlásit se
               </Button>
-            ) : null}
+            </form>
           </div>
+        </div>
+      </Card>
 
-          <nav className="flex flex-wrap gap-2">
+      <Card className="border-dashed border-zinc-300/70 bg-white/75 dark:border-zinc-700 dark:bg-zinc-900/70">
+        <CardContent className="pt-6">
+          <nav className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm">
               <Link href="/dashboard/viewer">Overview</Link>
             </Button>

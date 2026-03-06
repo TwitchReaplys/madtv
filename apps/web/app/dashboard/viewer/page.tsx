@@ -22,31 +22,27 @@ export default async function ViewerDashboardPage() {
   ).length;
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Viewer overview</CardTitle>
-          <CardDescription>
-            {profile?.display_name || profile?.username || user.email}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500">Aktivní členství</p>
-            <p className="text-2xl font-bold">{activeCount}</p>
-          </div>
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500">Celkem členství</p>
-            <p className="text-2xl font-bold">{subscriptions?.length ?? 0}</p>
-          </div>
-          <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-            <p className="text-sm text-zinc-500">Rychlý vstup</p>
-            <Link href="/explore" className="text-sm font-medium text-[var(--accent)] underline">
-              Explore tvůrce
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-sky-500/10 via-[var(--accent)]/10 to-transparent dark:border-zinc-800">
+        <CardTitle>Viewer overview</CardTitle>
+        <CardDescription>{profile?.display_name || profile?.username || user.email}</CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4 pt-6 md:grid-cols-3">
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <p className="text-sm text-zinc-500">Aktivní členství</p>
+          <p className="mt-2 text-3xl font-bold tracking-tight">{activeCount}</p>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <p className="text-sm text-zinc-500">Celkem členství</p>
+          <p className="mt-2 text-3xl font-bold tracking-tight">{subscriptions?.length ?? 0}</p>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-950">
+          <p className="text-sm text-zinc-500">Rychlý vstup</p>
+          <Link href="/explore" className="mt-2 inline-block text-sm font-medium text-[var(--accent)] underline">
+            Explore tvůrce
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -104,6 +104,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
     published_at: string;
     has_access: boolean;
     has_video: boolean;
+    video_thumbnail_url?: string | null;
   }>;
 
   const socialLinks =
@@ -121,7 +122,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   } as CSSProperties;
 
   return (
-    <div className="space-y-8" style={creatorStyle}>
+    <div className="mx-auto w-full max-w-5xl space-y-10" style={creatorStyle}>
       <CreatorHeader
         slug={creator.slug}
         title={creator.title}
@@ -133,27 +134,29 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         ownerView={isOwner}
       />
 
-      <FeaturedMediaCard
-        creatorId={creator.id}
-        creatorTitle={creator.title}
-        mediaType={
-          creator.featured_media_type === "bunny_video" || creator.featured_media_type === "image"
-            ? creator.featured_media_type
-            : "none"
-        }
-        featuredVideoId={creator.featured_video_id}
-        featuredThumbnailUrl={creator.featured_thumbnail_url}
-        featuredImageUrl={creator.featured_image_url}
-        coverImageUrl={creator.cover_image_url}
-        libraryId={process.env.BUNNY_STREAM_LIBRARY_ID ?? ""}
-      />
+      <div className="mx-auto w-full max-w-4xl">
+        <FeaturedMediaCard
+          creatorId={creator.id}
+          creatorTitle={creator.title}
+          mediaType={
+            creator.featured_media_type === "bunny_video" || creator.featured_media_type === "image"
+              ? creator.featured_media_type
+              : "none"
+          }
+          featuredVideoId={creator.featured_video_id}
+          featuredThumbnailUrl={creator.featured_thumbnail_url}
+          featuredImageUrl={creator.featured_image_url}
+          coverImageUrl={creator.cover_image_url}
+          libraryId={process.env.BUNNY_STREAM_LIBRARY_ID ?? ""}
+        />
+      </div>
 
-      <div className="space-y-3">
+      <div className="mx-auto w-full max-w-4xl space-y-3">
         <Notice message={checkoutSuccess} variant="success" />
         <Notice message={checkoutCancel} variant="error" />
       </div>
 
-      <section id={`tiers-${creator.slug}`} className="space-y-4 scroll-mt-20">
+      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-5xl space-y-4 scroll-mt-20">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Membership tiers</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">Choose your access level and unlock premium posts.</p>
@@ -161,7 +164,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
       </section>
 
-      <section className="space-y-4">
+      <section className="mx-auto w-full max-w-5xl space-y-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Latest posts</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
@@ -179,7 +182,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="mx-auto grid w-full max-w-4xl gap-6">
             {posts.map((post) =>
               post.has_access ? <PostCard key={post.id} slug={creator.slug} post={post} /> : <LockedPostCard key={post.id} post={post} />,
             )}

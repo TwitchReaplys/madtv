@@ -15,11 +15,11 @@ export default async function ViewerSubscriptionsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/10 via-sky-500/6 to-transparent dark:border-zinc-800">
         <CardTitle>Moje členství</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 pt-6">
         {(subscriptions ?? []).length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
             Nemáš zatím žádné členství.{" "}
@@ -43,7 +43,7 @@ export default async function ViewerSubscriptionsPage() {
             const tier = Array.isArray(tierRelation) ? tierRelation[0] : tierRelation;
 
             return (
-              <div key={subscription.id} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <div key={subscription.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
                 <p className="font-medium">{creator?.title ?? "Creator"}</p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">
                   Status: {subscription.status}

@@ -168,7 +168,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
   const commentSuccess = getMessage(query, "commentSuccess");
 
   return (
-    <div className="space-y-6" style={creatorStyle}>
+    <div className="mx-auto w-full max-w-4xl space-y-6" style={creatorStyle}>
       <AnalyticsBeacon
         eventType="post_view"
         creatorId={detail.creator_id}

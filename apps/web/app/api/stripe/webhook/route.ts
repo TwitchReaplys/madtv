@@ -48,27 +48,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    await enqueueStripeEvent(event.id);
-  } catch (error) {
+    await processStripeEventPayload({
+      supabase,
+      stripe,
+      event,
+    });
+    return NextResponse.json({ received: true, queued: false, processedInline: true, duplicate: isDuplicate });
+  } catch (inlineError) {
     try {
-      await processStripeEventPayload({
-        supabase,
-        stripe,
-        event,
-      });
-    } catch (inlineError) {
-      const queueErrorMessage = error instanceof Error ? error.message : "Failed to enqueue Stripe event";
+      await enqueueStripeEvent(event.id);
+      return NextResponse.json({ received: true, queued: true, processedInline: false, duplicate: isDuplicate });
+    } catch (queueError) {
       const inlineErrorMessage = inlineError instanceof Error ? inlineError.message : "Failed to process Stripe event inline";
+      const queueErrorMessage = queueError instanceof Error ? queueError.message : "Failed to enqueue Stripe event";
       return NextResponse.json(
         {
-          error: `Queue error: ${queueErrorMessage}; inline error: ${inlineErrorMessage}`,
+          error: `Inline error: ${inlineErrorMessage}; queue error: ${queueErrorMessage}`,
         },
         { status: 500 },
       );
     }
-
-    return NextResponse.json({ received: true, queued: false, processedInline: true, duplicate: isDuplicate });
   }
-
-  return NextResponse.json({ received: true, queued: true, duplicate: isDuplicate });
 }

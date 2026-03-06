@@ -10,6 +10,20 @@ type SubscriptionMetadata = {
   tierId?: string;
 };
 
+function getSubscriptionIdFromCheckoutSession(session: Stripe.Checkout.Session) {
+  const subscriptionRef = session.subscription;
+
+  if (typeof subscriptionRef === "string") {
+    return subscriptionRef;
+  }
+
+  if (subscriptionRef && typeof subscriptionRef === "object" && typeof subscriptionRef.id === "string") {
+    return subscriptionRef.id;
+  }
+
+  return null;
+}
+
 function getSubscriptionIdFromInvoice(invoice: Stripe.Invoice) {
   const invoiceLike = invoice as Stripe.Invoice & {
     subscription?: string | { id?: string } | null;
@@ -178,10 +192,7 @@ export async function processStripeEventPayload(params: {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const subscriptionId =
-        typeof session.subscription === "string"
-          ? session.subscription
-          : session.subscription?.id ?? null;
+      const subscriptionId = getSubscriptionIdFromCheckoutSession(session);
 
       if (session.mode === "subscription" && subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -198,6 +209,26 @@ export async function processStripeEventPayload(params: {
       break;
     }
 
+    case "checkout.session.async_payment_succeeded": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const subscriptionId = getSubscriptionIdFromCheckoutSession(session);
+
+      if (session.mode === "subscription" && subscriptionId) {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        await upsertSubscriptionFromStripe({
+          supabase,
+          subscription,
+          fallbackMetadata: {
+            userId: session.metadata?.userId,
+            creatorId: session.metadata?.creatorId,
+            tierId: session.metadata?.tierId,
+          },
+        });
+      }
+      break;
+    }
+
+    case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription;
@@ -205,6 +236,7 @@ export async function processStripeEventPayload(params: {
       break;
     }
 
+    case "invoice.payment_succeeded":
     case "invoice.paid":
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;

@@ -80,8 +80,30 @@ export function FeaturedMediaCard({
     );
   }
 
-  if (!featuredVideoId || !libraryId) {
+  if (!featuredVideoId) {
     return null;
+  }
+
+  if (!libraryId) {
+    return (
+      <section className="space-y-2">
+        <h2 className="text-xl font-bold tracking-tight">Featured media</h2>
+        <div className="relative block w-full overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 text-left dark:border-zinc-800 dark:bg-zinc-900">
+          {previewImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={previewImage} alt={`${creatorTitle} intro preview`} className="aspect-[16/9] w-full object-cover" />
+          ) : (
+            <div className="aspect-[16/9] w-full bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900" />
+          )}
+          <div className="absolute inset-0 bg-black/35" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-zinc-900 shadow-sm">
+              Video preview
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   return (

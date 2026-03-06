@@ -24,11 +24,11 @@ export default async function ViewerProfilePage({ searchParams }: PageProps) {
     .maybeSingle();
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/10 via-sky-500/6 to-transparent dark:border-zinc-800">
         <CardTitle>Profil</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
         <Notice message={success} variant="success" />
         <Notice message={error} variant="error" />
 
