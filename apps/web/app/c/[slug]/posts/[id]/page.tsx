@@ -264,7 +264,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
               <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">Komentáře mohou psát aktivní členové tvůrce.</p>
                 <Button asChild size="sm">
-                  <Link href={`/c/${slug}#tiers-${slug}`}>Předplatit členství</Link>
+                  <Link href={`/c/${slug}`}>Otevřít profil tvůrce</Link>
                 </Button>
               </CardContent>
             </Card>

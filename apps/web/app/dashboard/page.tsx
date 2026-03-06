@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Eye, FileText, Users } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireDashboardUser } from "@/lib/portal";
 
@@ -72,17 +73,15 @@ export default async function DashboardHomePage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="max-w-4xl">
-        <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
-      </div>
+    <div className="max-w-4xl space-y-8">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Card key={card.title} className="glass">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-zinc-500">{card.title}</CardTitle>
-              <card.icon className="h-4 w-4 text-[var(--accent)]" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+              <card.icon className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>
@@ -95,27 +94,25 @@ export default async function DashboardHomePage() {
         <CardHeader>
           <CardTitle className="text-lg">Rychlé akce</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href="/dashboard/posts/new" className="text-[var(--accent)] underline">
-              Vytvořit nový příspěvek
-            </Link>
-            <span className="text-zinc-500">•</span>
-            <Link href="/dashboard/viewer/subscriptions" className="text-[var(--accent)] underline">
-              Správa členství
-            </Link>
-            <span className="text-zinc-500">•</span>
-            <Link href="/explore" className="text-[var(--accent)] underline">
-              Projít tvůrce
-            </Link>
+        <CardContent className="space-y-4 text-sm">
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm" className="glow">
+              <Link href="/dashboard/posts/new">Vytvořit nový příspěvek</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/viewer/subscriptions">Správa členství</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/explore">Projít tvůrce</Link>
+            </Button>
           </div>
           {defaultCreator ? (
-            <p className="text-zinc-600 dark:text-zinc-300">
+            <p className="text-muted-foreground">
               {defaultCreator.title}: čistý příjem{" "}
               <strong>{toCurrency(creatorNetRevenueCents)}</strong>
             </p>
           ) : (
-            <p className="text-zinc-600 dark:text-zinc-300">
+            <p className="text-muted-foreground">
               Zatím nemáš přístup k žádnému creator workspace.
             </p>
           )}

@@ -9,7 +9,6 @@ import { CreatorHeader } from "@/components/creator/creator-header";
 import { LockedPostCard } from "@/components/creator/locked-post-card";
 import { PostCard } from "@/components/creator/post-card";
 import { SubscribeCTA } from "@/components/creator/subscribe-cta";
-import { TierCards, type PublicTier } from "@/components/creator/tier-cards";
 import { Notice } from "@/components/notice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAuthUser } from "@/lib/supabase/auth";
@@ -76,13 +75,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
     notFound();
   }
 
-  const [{ data: tiers }, { data: previewRows }, { data: memberRank }, { count: activeSubscribers }] = await Promise.all([
-    supabase
-      .from("tiers")
-      .select("id, name, description, price_cents, currency, rank")
-      .eq("creator_id", creator.id)
-      .eq("is_active", true)
-      .order("rank", { ascending: true }),
+  const [{ data: previewRows }, { data: memberRank }, { count: activeSubscribers }] = await Promise.all([
     supabase.rpc("creator_post_previews", {
       p_creator_id: creator.id,
     }),
@@ -146,14 +139,6 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         <Notice message={checkoutCancel} variant="error" />
       </div>
 
-      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-4xl px-4 py-12 space-y-4 scroll-mt-20">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
-        </div>
-        <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
-      </section>
-
       <section className="mx-auto w-full max-w-4xl px-4 pb-24 space-y-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Příspěvky</h2>
@@ -172,7 +157,11 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         ) : (
           <div className="space-y-4">
             {posts.map((post) =>
-              post.has_access ? <PostCard key={post.id} slug={creator.slug} post={post} /> : <LockedPostCard key={post.id} post={post} />,
+              post.has_access ? (
+                <PostCard key={post.id} slug={creator.slug} post={post} />
+              ) : (
+                <LockedPostCard key={post.id} slug={creator.slug} post={post} />
+              ),
             )}
           </div>
         )}
@@ -196,11 +185,6 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
       <SubscribeCTA
         creatorSlug={creator.slug}
         creatorName={creator.title}
-        lowestPrice={
-          tiers && tiers.length > 0
-            ? `${((tiers[0].price_cents as number) / 100).toLocaleString("cs-CZ")} ${(tiers[0].currency as string)}`
-            : undefined
-        }
         hasMembership={hasMembership || isOwner}
       />
     </div>

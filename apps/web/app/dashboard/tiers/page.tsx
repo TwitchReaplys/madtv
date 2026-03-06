@@ -1,5 +1,11 @@
 import Link from "next/link";
+
 import { Notice } from "@/components/notice";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { createTierAction, deleteTierAction, toggleTierAction } from "@/lib/actions/dashboard";
 import { requireUser } from "@/lib/auth";
 
@@ -24,16 +30,18 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Tiery</h2>
-        <p className="mt-2 text-sm text-zinc-700">
+      <Card className="glass max-w-2xl">
+        <CardHeader>
+          <CardTitle>Tiery</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
           Nejdřív je potřeba creator profil. Otevři{" "}
           <Link href="/dashboard/creator" className="underline">
             Creator profil
           </Link>
           .
-        </p>
-      </section>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -45,117 +53,93 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-      <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Nový tier</h2>
-        <p className="mt-2 text-sm text-zinc-600">Při vytvoření tieru se automaticky založí Stripe Product + Price.</p>
-
-        <div className="mt-4 space-y-3">
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>Nový tier</CardTitle>
+          <p className="text-sm text-muted-foreground">Při vytvoření tieru se automaticky založí Stripe Product + Price.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <Notice message={success} variant="success" />
           <Notice message={error} variant="error" />
-        </div>
 
-        <form action={createTierAction} className="mt-4 space-y-4">
-          <input type="hidden" name="creatorId" value={creator.id} />
+          <form action={createTierAction} className="space-y-4">
+            <input type="hidden" name="creatorId" value={creator.id} />
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Název</label>
-            <input name="name" type="text" required className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">Popis</label>
-            <textarea name="description" rows={3} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium">Cena (haléře)</label>
-              <input
-                name="priceCents"
-                type="number"
-                min={100}
-                step={1}
-                required
-                defaultValue={199}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Název</label>
+              <Input name="name" type="text" required />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Měna</label>
-              <input
-                name="currency"
-                type="text"
-                required
-                defaultValue="CZK"
-                maxLength={3}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm uppercase"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Rank</label>
-              <input
-                name="rank"
-                type="number"
-                min={1}
-                step={1}
-                required
-                defaultValue={1}
-                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
 
-          <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white">
-            Vytvořit tier
-          </button>
-        </form>
-      </section>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Popis</label>
+              <Textarea name="description" rows={3} />
+            </div>
 
-      <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Existující tiery</h2>
-        <div className="mt-4 space-y-3">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Cena (haléře)</label>
+                <Input name="priceCents" type="number" min={100} step={1} required defaultValue={199} />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Měna</label>
+                <Input name="currency" type="text" required defaultValue="CZK" maxLength={3} className="uppercase" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Rank</label>
+                <Input name="rank" type="number" min={1} step={1} required defaultValue={1} />
+              </div>
+            </div>
+
+            <Button type="submit" className="glow">
+              Vytvořit tier
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>Existující tiery</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
           {(tiers ?? []).length === 0 ? (
-            <p className="text-sm text-zinc-700">Zatím žádné tiery.</p>
+            <p className="text-sm text-muted-foreground">Zatím žádné tiery.</p>
           ) : (
             tiers?.map((tier) => (
-              <article key={tier.id} className="rounded-md border border-zinc-200 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+              <article key={tier.id} className="space-y-3 rounded-xl border border-border/70 bg-background/70 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
                     <h3 className="font-semibold">{tier.name}</h3>
-                    <p className="text-sm text-zinc-700">Rank {tier.rank} · {(tier.price_cents / 100).toFixed(2)} {tier.currency}</p>
-                    {tier.description ? <p className="mt-1 text-sm text-zinc-600">{tier.description}</p> : null}
-                    <p className="mt-1 text-xs text-zinc-500">Stripe price: {tier.stripe_price_id ?? "n/a"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Rank {tier.rank} · {(tier.price_cents / 100).toFixed(2)} {tier.currency}
+                    </p>
+                    {tier.description ? <p className="text-sm text-muted-foreground">{tier.description}</p> : null}
+                    <p className="text-xs text-muted-foreground">Stripe price: {tier.stripe_price_id ?? "n/a"}</p>
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      tier.is_active ? "bg-emerald-100 text-emerald-900" : "bg-zinc-100 text-zinc-700"
-                    }`}
-                  >
-                    {tier.is_active ? "Aktivní" : "Neaktivní"}
-                  </span>
+                  <Badge variant={tier.is_active ? "secondary" : "outline"}>{tier.is_active ? "Aktivní" : "Neaktivní"}</Badge>
                 </div>
 
-                <div className="mt-3 flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <form action={toggleTierAction}>
                     <input type="hidden" name="tierId" value={tier.id} />
                     <input type="hidden" name="isActive" value={tier.is_active ? "false" : "true"} />
-                    <button type="submit" className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100">
+                    <Button type="submit" variant="outline" size="sm">
                       {tier.is_active ? "Deaktivovat" : "Aktivovat"}
-                    </button>
+                    </Button>
                   </form>
 
                   <form action={deleteTierAction}>
                     <input type="hidden" name="tierId" value={tier.id} />
-                    <button type="submit" className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50">
+                    <Button type="submit" variant="destructive" size="sm">
                       Smazat
-                    </button>
+                    </Button>
                   </form>
                 </div>
               </article>
             ))
           )}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
     </div>
   );
 }

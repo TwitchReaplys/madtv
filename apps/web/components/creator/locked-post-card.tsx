@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Calendar, Lock, Play } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PublicPostPreview } from "./post-card";
 
 type LockedPostCardProps = {
+  slug: string;
   post: PublicPostPreview;
 };
 
@@ -16,7 +18,7 @@ const tierNames: Record<number, string> = {
   3: "VIP",
 };
 
-export function LockedPostCard({ post }: LockedPostCardProps) {
+export function LockedPostCard({ slug, post }: LockedPostCardProps) {
   const date = new Date(post.published_at).toLocaleDateString("cs-CZ", {
     day: "numeric",
     month: "short",
@@ -59,9 +61,11 @@ export function LockedPostCard({ post }: LockedPostCardProps) {
       <CardContent className="relative z-10 pt-0">
         <div className="mb-3 h-10 rounded-md bg-zinc-300/30 blur-[1px] dark:bg-zinc-700/25" />
         <div className="h-8 w-3/4 rounded-md bg-zinc-300/20 blur-[1px] dark:bg-zinc-700/20" />
-        <Button className="mt-4 w-full" size="sm">
-          <Lock className="h-4 w-4" />
-          Odemknout příspěvek
+        <Button asChild className="mt-4 w-full" size="sm">
+          <Link href={`/c/${slug}/posts/${post.id}`}>
+            <Lock className="h-4 w-4" />
+            Otevřít náhled a odemknout
+          </Link>
         </Button>
       </CardContent>
     </Card>
