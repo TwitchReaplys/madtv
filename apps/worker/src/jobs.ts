@@ -19,6 +19,43 @@ type SubscriptionMetadata = {
   tierId?: string;
 };
 
+function getSettingNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  if (value && typeof value === "object" && "value" in value) {
+    return getSettingNumber((value as { value?: unknown }).value);
+  }
+
+  return null;
+}
+
+function normalizePercent(raw: unknown, fallback: number) {
+  const parsed = getSettingNumber(raw);
+  const value = parsed ?? fallback;
+  return Math.min(100, Math.max(0, value));
+}
+
+function computeNetRevenueCents(grossRevenueCents: number, feePercent: number, vatPercent: number) {
+  if (grossRevenueCents <= 0) {
+    return 0;
+  }
+
+  const vatAmountCents =
+    vatPercent > 0 ? Math.round((grossRevenueCents * vatPercent) / (100 + vatPercent)) : 0;
+  const platformFeeCents = feePercent > 0 ? Math.round((grossRevenueCents * feePercent) / 100) : 0;
+
+  return Math.max(0, grossRevenueCents - vatAmountCents - platformFeeCents);
+}
+
 function getSubscriptionIdFromCheckoutSession(session: Stripe.Checkout.Session) {
   const subscriptionRef = session.subscription;
 
@@ -357,7 +394,7 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
   const end = new Date(start);
   end.setUTCDate(end.getUTCDate() + 1);
 
-  const [{ data: events, error: eventsError }, { data: creatorRow }, { data: feeSetting }] = await Promise.all([
+  const [{ data: events, error: eventsError }, { data: creatorRow }, { data: settingRows }] = await Promise.all([
     supabase
       .from("analytics_events")
       .select("event_type, user_id, session_id")
@@ -371,9 +408,8 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
       .maybeSingle(),
     supabase
       .from("platform_settings")
-      .select("value")
-      .eq("key", "platform_fee_percent")
-      .maybeSingle(),
+      .select("key, value")
+      .in("key", ["platform_fee_percent", "vat_percent"]),
   ]);
 
   if (eventsError) {
@@ -390,16 +426,9 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
       .filter((value): value is string => Boolean(value)),
   ).size;
 
-  const defaultFeePercentRaw =
-    feeSetting?.value && typeof feeSetting.value === "number"
-      ? feeSetting.value
-      : feeSetting?.value &&
-          typeof feeSetting.value === "object" &&
-          feeSetting.value !== null &&
-          "value" in feeSetting.value &&
-          typeof feeSetting.value.value === "number"
-        ? feeSetting.value.value
-        : 10;
+  const settingsMap = new Map<string, unknown>((settingRows ?? []).map((row) => [row.key, row.value]));
+  const defaultFeePercent = normalizePercent(settingsMap.get("platform_fee_percent"), 10);
+  const vatPercent = normalizePercent(settingsMap.get("vat_percent"), 21);
 
   const creatorFeePercentRaw =
     typeof creatorRow?.platform_fee_percent === "number"
@@ -408,9 +437,10 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
         ? Number(creatorRow.platform_fee_percent)
         : null;
 
-  const defaultFeePercent = Number.isFinite(defaultFeePercentRaw) ? Number(defaultFeePercentRaw) : 10;
-  const effectiveFeePercent = Number.isFinite(creatorFeePercentRaw) ? Number(creatorFeePercentRaw) : defaultFeePercent;
-  const feePercent = Math.min(100, Math.max(0, effectiveFeePercent));
+  const effectiveFeePercent = Number.isFinite(creatorFeePercentRaw)
+    ? Number(creatorFeePercentRaw)
+    : defaultFeePercent;
+  const feePercent = normalizePercent(effectiveFeePercent, defaultFeePercent);
 
   const { data: invoiceRows, error: invoiceRowsError } = await supabase
     .from("stripe_events")
@@ -459,7 +489,7 @@ async function recomputeAnalyticsForCreatorDay(creatorId: string, day: string) {
     }
   }
 
-  const netRevenueCents = Math.max(0, Math.round(grossRevenueCents - grossRevenueCents * (feePercent / 100)));
+  const netRevenueCents = computeNetRevenueCents(grossRevenueCents, feePercent, vatPercent);
 
   const { error: upsertError } = await supabase.from("analytics_daily_creator").upsert(
     {

@@ -26,6 +26,7 @@ async function requirePlatformAdminForMutation() {
 export async function updatePlatformSettingsAction(formData: FormData) {
   const schema = z.object({
     platformFeePercent: z.coerce.number().min(0).max(100),
+    vatPercent: z.coerce.number().min(0).max(100),
     maintenanceMode: z
       .enum(["true", "false"])
       .transform((value) => value === "true"),
@@ -36,6 +37,7 @@ export async function updatePlatformSettingsAction(formData: FormData) {
 
   const parsed = schema.safeParse({
     platformFeePercent: formData.get("platformFeePercent"),
+    vatPercent: formData.get("vatPercent"),
     maintenanceMode: formData.get("maintenanceMode"),
     enableNewCreatorSignup: formData.get("enableNewCreatorSignup"),
   });
@@ -47,6 +49,7 @@ export async function updatePlatformSettingsAction(formData: FormData) {
   const { supabase } = await requirePlatformAdminForMutation();
   const rows = [
     { key: "platform_fee_percent", value: parsed.data.platformFeePercent },
+    { key: "vat_percent", value: parsed.data.vatPercent },
     { key: "maintenance_mode", value: parsed.data.maintenanceMode },
     { key: "enable_new_creator_signup", value: parsed.data.enableNewCreatorSignup },
   ];

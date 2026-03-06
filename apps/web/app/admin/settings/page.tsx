@@ -15,7 +15,22 @@ function getBooleanSetting(value: unknown, fallback: boolean) {
 }
 
 function getNumberSetting(value: unknown, fallback: number) {
-  return typeof value === "number" ? value : fallback;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  if (value && typeof value === "object" && "value" in value) {
+    return getNumberSetting((value as { value?: unknown }).value, fallback);
+  }
+
+  return fallback;
 }
 
 export default async function AdminSettingsPage({ searchParams }: PageProps) {
@@ -27,10 +42,11 @@ export default async function AdminSettingsPage({ searchParams }: PageProps) {
   const { data: rows } = await supabase
     .from("platform_settings")
     .select("key, value")
-    .in("key", ["platform_fee_percent", "maintenance_mode", "enable_new_creator_signup"]);
+    .in("key", ["platform_fee_percent", "vat_percent", "maintenance_mode", "enable_new_creator_signup"]);
 
   const map = new Map<string, unknown>((rows ?? []).map((row) => [row.key, row.value]));
   const feePercent = getNumberSetting(map.get("platform_fee_percent"), 10);
+  const vatPercent = getNumberSetting(map.get("vat_percent"), 21);
   const maintenanceMode = getBooleanSetting(map.get("maintenance_mode"), false);
   const enableNewCreatorSignup = getBooleanSetting(map.get("enable_new_creator_signup"), true);
 
@@ -57,6 +73,22 @@ export default async function AdminSettingsPage({ searchParams }: PageProps) {
             />
             <p className="mt-1 text-xs text-zinc-500">
               Použije se jako fallback. Primární fee se nastavuje per tvůrce v Admin → Creators.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">VAT percent included in listed price</label>
+            <input
+              type="number"
+              name="vatPercent"
+              min={0}
+              max={100}
+              step="0.1"
+              defaultValue={vatPercent}
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Čistý příjem = zákaznická cena − DPH (včetně ceny) − platform fee.
             </p>
           </div>
 

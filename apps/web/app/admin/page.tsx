@@ -11,10 +11,48 @@ function toCurrency(cents: number, currency = "CZK") {
   }).format(cents / 100);
 }
 
+function getSettingNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  if (value && typeof value === "object" && "value" in value) {
+    return getSettingNumber((value as { value?: unknown }).value);
+  }
+
+  return null;
+}
+
+function normalizePercent(raw: unknown, fallback: number) {
+  const parsed = getSettingNumber(raw);
+  const value = parsed ?? fallback;
+  return Math.min(100, Math.max(0, value));
+}
+
+function computeNetRevenueCents(grossRevenueCents: number, feePercent: number, vatPercent: number) {
+  if (grossRevenueCents <= 0) {
+    return 0;
+  }
+
+  const vatAmountCents =
+    vatPercent > 0 ? Math.round((grossRevenueCents * vatPercent) / (100 + vatPercent)) : 0;
+  const platformFeeCents = feePercent > 0 ? Math.round((grossRevenueCents * feePercent) / 100) : 0;
+
+  return Math.max(0, grossRevenueCents - vatAmountCents - platformFeeCents);
+}
+
 export default async function AdminOverviewPage() {
   const { supabase } = await requirePlatformAdmin();
 
-  const [{ count: creatorsCount }, { data: activeSubs }, { count: activeSubsCount }] = await Promise.all([
+  const [{ count: creatorsCount }, { data: activeSubs }, { count: activeSubsCount }, { data: settingsRows }] =
+    await Promise.all([
     supabase.from("creators").select("id", { head: true, count: "exact" }),
     supabase
       .from("subscriptions")
@@ -24,7 +62,15 @@ export default async function AdminOverviewPage() {
       .from("subscriptions")
       .select("id", { head: true, count: "exact" })
       .in("status", ["active", "trialing"]),
-  ]);
+    supabase
+      .from("platform_settings")
+      .select("key, value")
+      .in("key", ["platform_fee_percent", "vat_percent"]),
+    ]);
+
+  const settingsMap = new Map<string, unknown>((settingsRows ?? []).map((row) => [row.key, row.value]));
+  const defaultFeePercent = normalizePercent(settingsMap.get("platform_fee_percent"), 10);
+  const vatPercent = normalizePercent(settingsMap.get("vat_percent"), 21);
 
   const financials = (activeSubs ?? []).reduce(
     (acc, row) => {
@@ -59,11 +105,10 @@ export default async function AdminOverviewPage() {
       const creatorRelation = tier?.creators;
       const creator = Array.isArray(creatorRelation) ? creatorRelation[0] : creatorRelation;
       const rawFee = creator?.platform_fee_percent;
-      const parsedFee = typeof rawFee === "string" ? Number(rawFee) : Number(rawFee ?? 10);
-      const feePercent = Number.isFinite(parsedFee) ? Math.min(100, Math.max(0, parsedFee)) : 10;
+      const feePercent = normalizePercent(rawFee, defaultFeePercent);
 
       acc.gross += priceCents;
-      acc.net += Math.max(0, Math.round(priceCents - priceCents * (feePercent / 100)));
+      acc.net += computeNetRevenueCents(priceCents, feePercent, vatPercent);
 
       return acc;
     },
@@ -90,7 +135,7 @@ export default async function AdminOverviewPage() {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>MRR approx (30d)</CardTitle>
+          <CardTitle>MRR approx (gross / creator net)</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-xl font-bold">

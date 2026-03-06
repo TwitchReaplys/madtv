@@ -117,6 +117,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
             <p className="text-xl font-bold">
               {toCurrency(totals.gross)} / {toCurrency(totals.net)}
             </p>
+            <p className="mt-1 text-xs text-zinc-500">Čistý příjem po odečtení DPH a platform fee.</p>
           </CardContent>
         </Card>
         <Card className="glass">

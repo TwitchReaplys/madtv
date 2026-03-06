@@ -173,6 +173,12 @@ export async function POST(request: Request) {
           creatorId: tier.creator_id,
           tierId: tier.id,
         },
+        invoice_settings: {
+          issuer: {
+            type: "account",
+            account: creatorStripeAccountId,
+          },
+        },
         application_fee_percent: applicationFeePercent,
         transfer_data: {
           destination: creatorStripeAccountId,
