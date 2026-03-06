@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { requireDashboardUser } from "@/lib/portal";
 
 export const dynamic = "force-dynamic";
@@ -49,28 +49,6 @@ export default async function DashboardLayout({
             </form>
           </div>
         </div>
-      </Card>
-
-      <Card className="border-dashed border-zinc-300/70 bg-white/75 dark:border-zinc-700 dark:bg-zinc-900/70">
-        <CardContent className="pt-6">
-          <nav className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/viewer">Overview</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/viewer/subscriptions">Subscriptions</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/viewer/profile">Profile</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/dashboard/viewer/billing">Billing</Link>
-            </Button>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/explore">Explore</Link>
-            </Button>
-          </nav>
-        </CardContent>
       </Card>
 
       {children}
