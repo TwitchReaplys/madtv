@@ -1,11 +1,6 @@
 import Link from "next/link";
-
 import { BunnyUploader } from "@/components/bunny-uploader";
 import { Notice } from "@/components/notice";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { createPostAction } from "@/lib/actions/dashboard";
 import { requireUser } from "@/lib/auth";
 
@@ -30,75 +25,75 @@ export default async function NewPostPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <Card className="glass max-w-2xl">
-        <CardHeader>
-          <CardTitle>Nový příspěvek</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+      <section className="rounded-2xl glass p-6">
+        <h2 className="text-lg font-semibold">Nový příspěvek</h2>
+        <p className="mt-2 text-sm text-zinc-700">
           Nejdřív je potřeba vytvořit creator profil. Otevři{" "}
           <Link href="/dashboard/creator" className="underline">
             Creator profil
           </Link>
           .
-        </CardContent>
-      </Card>
+        </p>
+      </section>
     );
   }
 
   return (
-    <div className="max-w-2xl space-y-4">
-      <h1 className="text-3xl font-bold">Nový příspěvek</h1>
+    <section className="rounded-2xl glass p-6">
+      <h2 className="text-lg font-semibold">Nový příspěvek</h2>
+      <p className="mt-2 text-sm text-zinc-600">Textový příspěvek s volitelným Bunny Stream videem.</p>
 
-      <Card className="glass">
-        <CardHeader>
-          <CardTitle>Vytvořit příspěvek</CardTitle>
-          <p className="text-sm text-muted-foreground">Textový příspěvek s volitelným Bunny Stream videem.</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Notice message={success} variant="success" />
-          <Notice message={error} variant="error" />
+      <div className="mt-4 space-y-3">
+        <Notice message={success} variant="success" />
+        <Notice message={error} variant="error" />
+      </div>
 
-          <form action={createPostAction} className="space-y-4">
-            <input type="hidden" name="creatorId" value={creator.id} />
+      <form action={createPostAction} className="mt-4 space-y-4">
+        <input type="hidden" name="creatorId" value={creator.id} />
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Nadpis</label>
-              <Input type="text" name="title" required />
-            </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Nadpis</label>
+          <input
+            type="text"
+            name="title"
+            required
+            className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          />
+        </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Obsah</label>
-              <Textarea name="body" rows={8} />
-            </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Obsah</label>
+          <textarea name="body" rows={8} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
+        </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Viditelnost</label>
-                <select
-                  name="visibility"
-                  defaultValue="public"
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="public">Veřejný</option>
-                  <option value="members">Pro členy</option>
-                  <option value="tier">Dle tier ranku</option>
-                </select>
-              </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium">Viditelnost</label>
+            <select name="visibility" defaultValue="public" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
+              <option value="public">Veřejný</option>
+              <option value="members">Pro členy</option>
+              <option value="tier">Dle tier ranku</option>
+            </select>
+          </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Minimální tier rank (pro režim tier)</label>
-                <Input type="number" name="minTierRank" min={1} step={1} />
-              </div>
-            </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">Minimální tier rank (pro režim tier)</label>
+            <input
+              type="number"
+              name="minTierRank"
+              min={1}
+              step={1}
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
 
-            <BunnyUploader title="Volitelné Bunny video" />
+        <BunnyUploader title="Volitelné Bunny video" />
 
-            <Button type="submit" className="glow">
-              Publikovat příspěvek
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+        <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white">
+          Publikovat příspěvek
+        </button>
+      </form>
+    </section>
   );
 }

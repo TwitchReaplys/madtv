@@ -21,10 +21,10 @@ export function SubscribeCTA({ creatorSlug, creatorName, lowestPrice, hasMembers
       <Card className="flex items-center justify-between gap-3 border-none bg-transparent p-0 shadow-none">
         <div className="text-sm">
           <p className="font-medium">Odebírat {creatorName}</p>
-          {lowestPrice ? <p className="text-zinc-500">od {lowestPrice}/měs</p> : null}
+          <p className="text-zinc-500">od {lowestPrice ?? "99 Kč"}/měs</p>
         </div>
         <Button asChild size="sm" className="glow">
-          <Link href={`/login?next=/c/${creatorSlug}`}>
+          <Link href={`#tiers-${creatorSlug}`}>
             <Lock className="h-4 w-4" />
             Odebírat
           </Link>

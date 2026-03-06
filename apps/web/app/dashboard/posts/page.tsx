@@ -1,10 +1,5 @@
 import Link from "next/link";
-import { Calendar, Eye, Pencil, Play } from "lucide-react";
-
 import { Notice } from "@/components/notice";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deletePostAction } from "@/lib/actions/dashboard";
 import { requireUser } from "@/lib/auth";
 
@@ -13,26 +8,6 @@ export const dynamic = "force-dynamic";
 type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
-
-type PostAssetRow = {
-  id: string;
-  type: string | null;
-};
-
-type PostRow = {
-  id: string;
-  title: string;
-  visibility: "public" | "members" | "tier";
-  min_tier_rank: number | null;
-  published_at: string;
-  post_assets: PostAssetRow[] | PostAssetRow | null;
-};
-
-const visibilityLabel = {
-  public: "Veřejný",
-  members: "Pro členy",
-  tier: "Prémiový",
-} as const;
 
 export default async function DashboardPostsPage({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -49,14 +24,10 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <Card className="glass max-w-2xl">
-        <CardHeader>
-          <CardTitle>Příspěvky</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
-          Nejdřív vytvoř creator profil, potom můžeš publikovat příspěvky.
-        </CardContent>
-      </Card>
+      <section className="rounded-2xl glass p-6">
+        <h2 className="text-lg font-semibold">Příspěvky</h2>
+        <p className="mt-2 text-sm text-zinc-700">Nejdřív vytvoř creator profil, potom můžeš publikovat příspěvky.</p>
+      </section>
     );
   }
 
@@ -66,80 +37,71 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
     .eq("creator_id", creator.id)
     .order("published_at", { ascending: false });
 
-  const typedPosts = (posts ?? []) as PostRow[];
-
   return (
-    <div className="max-w-4xl space-y-4">
+    <section className="rounded-2xl glass p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-bold">Příspěvky</h1>
-        <Button asChild className="glow">
-          <Link href="/dashboard/posts/new">Nový příspěvek</Link>
-        </Button>
+        <h2 className="text-lg font-semibold">Příspěvky</h2>
+        <Link href="/dashboard/posts/new" className="rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white">
+          Nový příspěvek
+        </Link>
       </div>
 
-      <Notice message={success} variant="success" />
-      <Notice message={error} variant="error" />
+      <div className="mt-4 space-y-3">
+        <Notice message={success} variant="success" />
+        <Notice message={error} variant="error" />
+      </div>
 
-      <div className="space-y-3">
-        {typedPosts.length === 0 ? (
-          <Card className="glass">
-            <CardContent className="pt-6 text-sm text-muted-foreground">Zatím žádné příspěvky.</CardContent>
-          </Card>
+      <div className="mt-4 space-y-3">
+        {(posts ?? []).length === 0 ? (
+          <p className="text-sm text-zinc-700">Zatím žádné příspěvky.</p>
         ) : (
-          typedPosts.map((post) => {
+          posts?.map((post) => {
             const assets = Array.isArray(post.post_assets) ? post.post_assets : [];
             const hasVideo = assets.some((asset) => asset.type === "bunny_video");
 
             return (
-              <Card key={post.id} className="glass">
-                <CardContent className="flex flex-wrap items-start justify-between gap-3 p-5">
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate font-semibold">{post.title}</h3>
-                      <Badge variant={post.visibility === "public" ? "secondary" : "default"} className="text-xs">
-                        {visibilityLabel[post.visibility]}
-                        {post.visibility === "tier" && post.min_tier_rank ? ` ${post.min_tier_rank}+` : null}
-                      </Badge>
-                      {hasVideo ? (
-                        <Badge variant="outline" className="text-xs">
-                          <Play className="h-3 w-3" />
-                          Video
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(post.published_at).toLocaleString("cs-CZ")}
+              <article key={post.id} className="rounded-md border border-zinc-200/80 p-4 dark:border-zinc-800/80">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold">{post.title}</h3>
+                    <p className="text-sm text-zinc-700">
+                      Viditelnost: {post.visibility}
+                      {post.visibility === "tier" && post.min_tier_rank ? ` (rank ${post.min_tier_rank}+)` : ""}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {new Date(post.published_at).toLocaleString()} · {hasVideo ? "Obsahuje video" : "Pouze text"}
                     </p>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href={`/c/${creator.slug}/posts/${post.id}`} aria-label="Náhled">
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href={`/dashboard/creator/${creator.id}/posts/${post.id}/edit`} aria-label="Upravit">
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-
+                  <div className="flex gap-2">
+                    <Link
+                      href={`/dashboard/posts/${post.id}/edit`}
+                      className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100"
+                    >
+                      Upravit
+                    </Link>
+                    <Link
+                      href={`/c/${creator.slug}/posts/${post.id}`}
+                      className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100"
+                    >
+                      Náhled
+                    </Link>
                     <form action={deletePostAction}>
                       <input type="hidden" name="postId" value={post.id} />
                       <input type="hidden" name="returnPath" value="/dashboard/posts" />
-                      <Button type="submit" variant="destructive" size="sm">
+                      <button
+                        type="submit"
+                        className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                      >
                         Smazat
-                      </Button>
+                      </button>
                     </form>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </article>
             );
           })
         )}
       </div>
-    </div>
+    </section>
   );
 }
