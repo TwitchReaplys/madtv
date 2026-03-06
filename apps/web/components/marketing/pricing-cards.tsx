@@ -6,26 +6,26 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 
 const plans = [
   {
-    title: "Starter",
-    price: "Zdarma",
-    note: "Pro začínající tvůrce",
-    cta: "Začít zdarma",
-    features: ["1 tier", "Základní analýzy", "Text posty", "E-mail podpora"],
+    title: "Supporter",
+    price: "od 99 Kč/měs",
+    note: "Základní členský přístup",
+    cta: "Vybrat Supporter",
+    features: ["Členské textové příspěvky", "Komunitní komentáře", "Podpora tvůrce"],
   },
   {
-    title: "Creator",
-    price: "299 Kč/měs",
-    note: "Pro aktivní tvůrce",
-    cta: "Vybrat Creator",
-    features: ["Neomezené tiery", "Pokročilé analýzy", "Video hosting", "Vlastní branding", "Prioritní podpora"],
+    title: "Pro",
+    price: "od 249 Kč/měs",
+    note: "Více obsahu a early access",
+    cta: "Vybrat Pro",
+    features: ["Vše ze Supporter", "Exkluzivní videa", "Early access", "Prioritní reakce tvůrce"],
     highlighted: true,
   },
   {
-    title: "Business",
-    price: "799 Kč/měs",
-    note: "Pro profesionální tvůrce",
-    cta: "Vybrat Business",
-    features: ["Vše z Creator", "API přístup", "Týmové účty", "Webhooks", "Dedikovaný support"],
+    title: "VIP",
+    price: "od 499 Kč/měs",
+    note: "Maximální přístup",
+    cta: "Vybrat VIP",
+    features: ["Vše z Pro", "Behind the scenes", "Bonusové streamy", "Limitované drops"],
   },
 ];
 
@@ -33,8 +33,8 @@ export function PricingCards() {
   return (
     <section className="space-y-8 py-10">
       <div className="mx-auto max-w-2xl text-center">
-        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Jednoduchý ceník</h2>
-        <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-300">Zvol si plán, který ti vyhovuje. Bez skrytých poplatků.</p>
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Úrovně členství</h2>
+        <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-300">Každý tvůrce má vlastní ceny. Tohle je typický přehled.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">

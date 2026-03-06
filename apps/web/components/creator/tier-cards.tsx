@@ -35,7 +35,7 @@ export function TierCards({ tiers, isAuthenticated, loginUrl }: TierCardsProps) 
   };
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3">
       {tiers.map((tier) => (
         <Card
           key={tier.id}

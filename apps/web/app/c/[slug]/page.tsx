@@ -5,7 +5,6 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { CreatorHeader } from "@/components/creator/creator-header";
-import { FeaturedMediaCard } from "@/components/creator/featured-media-card";
 import { LockedPostCard } from "@/components/creator/locked-post-card";
 import { PostCard } from "@/components/creator/post-card";
 import { SubscribeCTA } from "@/components/creator/subscribe-cta";
@@ -127,7 +126,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   } as CSSProperties;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10" style={creatorStyle}>
+    <div className="mx-auto w-full max-w-5xl space-y-8" style={creatorStyle}>
       <CreatorHeader
         slug={creator.slug}
         title={creator.title}
@@ -141,29 +140,12 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         postCount={posts.length}
       />
 
-      <div className="mx-auto w-full max-w-4xl">
-        <FeaturedMediaCard
-          creatorId={creator.id}
-          creatorTitle={creator.title}
-          mediaType={
-            creator.featured_media_type === "bunny_video" || creator.featured_media_type === "image"
-              ? creator.featured_media_type
-              : "none"
-          }
-          featuredVideoId={creator.featured_video_id}
-          featuredThumbnailUrl={creator.featured_thumbnail_url}
-          featuredImageUrl={creator.featured_image_url}
-          coverImageUrl={creator.cover_image_url}
-          libraryId={process.env.BUNNY_STREAM_LIBRARY_ID ?? ""}
-        />
-      </div>
-
-      <div className="mx-auto w-full max-w-4xl space-y-3">
+      <div className="mx-auto w-full max-w-4xl space-y-3 pt-2">
         <Notice message={checkoutSuccess} variant="success" />
         <Notice message={checkoutCancel} variant="error" />
       </div>
 
-      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-5xl space-y-4 scroll-mt-20">
+      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-4xl space-y-4 py-4 scroll-mt-20">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
@@ -171,7 +153,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
       </section>
 
-      <section className="mx-auto w-full max-w-5xl space-y-4">
+      <section className="mx-auto w-full max-w-4xl space-y-4 pb-24">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Příspěvky</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">Veřejné příspěvky jsou dostupné všem, ostatní mají náhled.</p>
