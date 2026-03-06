@@ -25,6 +25,11 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
   const error = typeof query.error === "string" ? query.error : null;
 
   const { supabase, creator } = await requireCreatorAccess(creatorId);
+  const { data: creatorPricing } = await supabase
+    .from("creators")
+    .select("pricing_mode")
+    .eq("id", creatorId)
+    .maybeSingle();
 
   const { data: tiers } = await supabase
     .from("tiers")
@@ -35,7 +40,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Nový tier pro {creator.title}</h2>
+        <h2 className="text-lg font-semibold">Nový plán / cena pro {creator.title}</h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Stripe Product + Price se vytvoří automaticky.</p>
 
         <div className="mt-4 space-y-3">
@@ -46,6 +51,21 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
         <form action={createTierAction} className="mt-4 space-y-4">
           <input type="hidden" name="creatorId" value={creatorId} />
           <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/tiers`} />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Model členství</label>
+            <select
+              name="pricingMode"
+              defaultValue={creatorPricing?.pricing_mode === "single" ? "single" : "tiers"}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+            >
+              <option value="single">Jednotná cena (jeden plán)</option>
+              <option value="tiers">Tiery (více plánů)</option>
+            </select>
+            <p className="mt-1 text-xs text-zinc-500">
+              U jednotné ceny se po vytvoření tohoto plánu automaticky deaktivují ostatní aktivní tiery.
+            </p>
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium">Název</label>

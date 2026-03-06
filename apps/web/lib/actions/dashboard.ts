@@ -732,6 +732,7 @@ export async function createTierAction(formData: FormData) {
     : "/dashboard/tiers";
   const returnPath = getReturnPath(formData, fallbackPath);
   const parsedPriceCents = parsePriceAmountToCents(getTextValue(formData, "priceCents"));
+  const pricingMode = getTextValue(formData, "pricingMode") === "single" ? "single" : "tiers";
 
   if (!parsedPriceCents || parsedPriceCents < 100) {
     redirectWithMessage(returnPath, "error", "Cena musí být ve formátu 199 nebo 199,00.");
@@ -743,7 +744,7 @@ export async function createTierAction(formData: FormData) {
     description: getTextValue(formData, "description"),
     priceCents: parsedPriceCents,
     currency: getTextValue(formData, "currency") || "CZK",
-    rank: getTextValue(formData, "rank"),
+    rank: pricingMode === "single" ? 1 : getTextValue(formData, "rank"),
   });
 
   if (!parsed.success) {
@@ -759,19 +760,20 @@ export async function createTierAction(formData: FormData) {
 
   const { data: creator } = await supabase
     .from("creators")
-    .select("id, title")
+    .select("id, title, slug")
     .eq("id", parsed.data.creatorId)
     .single();
 
   const stripe = getStripeClient();
   const currency = parsed.data.currency.toUpperCase();
+  const rank = pricingMode === "single" ? 1 : parsed.data.rank;
 
   const product = await stripe.products.create({
     name: `${parsed.data.name} - ${creator?.title ?? "Creator"}`,
     description: parsed.data.description || undefined,
     metadata: {
       creatorId: parsed.data.creatorId,
-      rank: String(parsed.data.rank),
+      rank: String(rank),
     },
   });
 
@@ -785,31 +787,81 @@ export async function createTierAction(formData: FormData) {
     },
     metadata: {
       creatorId: parsed.data.creatorId,
-      rank: String(parsed.data.rank),
+      rank: String(rank),
     },
   });
 
-  const { error } = await supabase.from("tiers").insert({
+  const { data: insertedTier, error } = await supabase.from("tiers").insert({
     creator_id: parsed.data.creatorId,
     name: parsed.data.name,
     description: parsed.data.description || null,
     price_cents: parsed.data.priceCents,
     currency,
-    rank: parsed.data.rank,
+    rank,
     interval: "month",
     stripe_product_id: product.id,
     stripe_price_id: price.id,
     is_active: true,
-  });
+  }).select("id").single();
 
-  if (error) {
-    redirectWithMessage(returnPath, "error", error.message);
+  if (error || !insertedTier) {
+    redirectWithMessage(returnPath, "error", error?.message ?? "Tier creation failed");
+  }
+
+  if (pricingMode === "single") {
+    const [{ error: deactivateError }, { error: creatorUpdateError }] = await Promise.all([
+      supabase
+        .from("tiers")
+        .update({ is_active: false })
+        .eq("creator_id", parsed.data.creatorId)
+        .neq("id", insertedTier.id),
+      supabase
+        .from("creators")
+        .update({
+          pricing_mode: "single",
+          single_price_cents: parsed.data.priceCents,
+          single_price_currency: currency,
+        })
+        .eq("id", parsed.data.creatorId),
+    ]);
+
+    if (deactivateError) {
+      redirectWithMessage(returnPath, "error", deactivateError.message);
+    }
+
+    if (creatorUpdateError) {
+      redirectWithMessage(returnPath, "error", creatorUpdateError.message);
+    }
+  } else {
+    const { error: creatorUpdateError } = await supabase
+      .from("creators")
+      .update({
+        pricing_mode: "tiers",
+      })
+      .eq("id", parsed.data.creatorId);
+
+    if (creatorUpdateError) {
+      redirectWithMessage(returnPath, "error", creatorUpdateError.message);
+    }
   }
 
   revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/tiers`);
+  revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/settings`);
   revalidatePath("/dashboard/tiers");
   revalidatePath("/dashboard");
-  redirectWithMessage(returnPath, "success", "Tier created");
+  revalidatePath("/");
+  revalidatePath("/explore");
+  if (creator?.slug) {
+    revalidatePath(`/c/${creator.slug}`);
+  }
+
+  redirectWithMessage(
+    returnPath,
+    "success",
+    pricingMode === "single"
+      ? "Jednotná cena byla vytvořena (ostatní tiery byly deaktivovány)."
+      : "Tier created",
+  );
 }
 
 export async function toggleTierAction(formData: FormData) {

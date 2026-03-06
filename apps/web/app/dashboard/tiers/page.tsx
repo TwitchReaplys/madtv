@@ -27,7 +27,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
   const { data: creator } = await supabase
     .from("creators")
-    .select("id, slug, title")
+    .select("id, slug, title, pricing_mode")
     .eq("owner_user_id", user.id)
     .maybeSingle();
 
@@ -55,8 +55,8 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Nový tier</h2>
-        <p className="mt-2 text-sm text-zinc-600">Při vytvoření tieru se automaticky založí Stripe Product + Price.</p>
+        <h2 className="text-lg font-semibold">Nový plán / cena</h2>
+        <p className="mt-2 text-sm text-zinc-600">Při vytvoření se automaticky založí Stripe Product + Price.</p>
 
         <div className="mt-4 space-y-3">
           <Notice message={success} variant="success" />
@@ -65,6 +65,21 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
         <form action={createTierAction} className="mt-4 space-y-4">
           <input type="hidden" name="creatorId" value={creator.id} />
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Model členství</label>
+            <select
+              name="pricingMode"
+              defaultValue={creator.pricing_mode === "single" ? "single" : "tiers"}
+              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm"
+            >
+              <option value="single">Jednotná cena (jeden plán)</option>
+              <option value="tiers">Tiery (více plánů)</option>
+            </select>
+            <p className="mt-1 text-xs text-zinc-500">
+              U jednotné ceny se po vytvoření tohoto plánu automaticky deaktivují ostatní aktivní tiery.
+            </p>
+          </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium">Název</label>
