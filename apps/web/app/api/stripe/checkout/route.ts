@@ -44,6 +44,14 @@ function normalizeFeePercent(raw: unknown, fallback = 10) {
   return Number(clamped.toFixed(2));
 }
 
+function vatIncludedSharePercent(vatPercent: number) {
+  if (vatPercent <= 0) {
+    return 0;
+  }
+
+  return Number(((vatPercent / (100 + vatPercent)) * 100).toFixed(2));
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const parsed = checkoutSchema.safeParse(body);
@@ -133,14 +141,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Creator is not ready for Stripe Connect payouts yet" }, { status: 400 });
   }
 
-  const { data: defaultFeeSetting } = await supabase
+  const { data: settingsRows } = await supabase
     .from("platform_settings")
-    .select("value")
-    .eq("key", "platform_fee_percent")
-    .maybeSingle();
+    .select("key, value")
+    .in("key", ["platform_fee_percent", "vat_percent"]);
 
-  const defaultFeePercent = normalizeFeePercent(defaultFeeSetting?.value, 10);
-  const applicationFeePercent = normalizeFeePercent(creator?.platform_fee_percent, defaultFeePercent);
+  const settings = new Map<string, unknown>((settingsRows ?? []).map((row) => [row.key, row.value]));
+  const defaultFeePercent = normalizeFeePercent(settings.get("platform_fee_percent"), 10);
+  const creatorFeePercent = normalizeFeePercent(creator?.platform_fee_percent, defaultFeePercent);
+  const vatPercent = normalizeFeePercent(settings.get("vat_percent"), 21);
+  const vatSharePercent = vatIncludedSharePercent(vatPercent);
+  const applicationFeePercent = normalizeFeePercent(creatorFeePercent + vatSharePercent, 10);
 
   if (!creatorSlug) {
     return NextResponse.json({ error: "Creator slug is missing" }, { status: 400 });
@@ -179,6 +190,7 @@ export async function POST(request: Request) {
             account: creatorStripeAccountId,
           },
         },
+        on_behalf_of: creatorStripeAccountId,
         application_fee_percent: applicationFeePercent,
         transfer_data: {
           destination: creatorStripeAccountId,
@@ -191,7 +203,7 @@ export async function POST(request: Request) {
           account: creatorStripeAccountId,
         },
       },
-      billing_address_collection: "auto",
+      billing_address_collection: "required",
       customer_update: {
         address: "auto",
         name: "auto",
