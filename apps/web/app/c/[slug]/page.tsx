@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 
 import { CreatorHeader } from "@/components/creator/creator-header";
 import { LockedPostCard } from "@/components/creator/locked-post-card";
@@ -126,7 +127,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   } as CSSProperties;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8" style={creatorStyle}>
+    <div className="relative left-1/2 w-screen -translate-x-1/2 space-y-8" style={creatorStyle}>
       <CreatorHeader
         slug={creator.slug}
         title={creator.title}
@@ -140,12 +141,12 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         postCount={posts.length}
       />
 
-      <div className="mx-auto w-full max-w-4xl space-y-3 pt-2">
+      <div className="mx-auto w-full max-w-4xl px-4 space-y-3">
         <Notice message={checkoutSuccess} variant="success" />
         <Notice message={checkoutCancel} variant="error" />
       </div>
 
-      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-4xl space-y-4 py-4 scroll-mt-20">
+      <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-4xl px-4 py-12 space-y-4 scroll-mt-20">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
@@ -153,7 +154,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
       </section>
 
-      <section className="mx-auto w-full max-w-4xl space-y-4 pb-24">
+      <section className="mx-auto w-full max-w-4xl px-4 pb-24 space-y-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Příspěvky</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">Veřejné příspěvky jsou dostupné všem, ostatní mají náhled.</p>
@@ -169,13 +170,28 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
             </CardContent>
           </Card>
         ) : (
-          <div className="mx-auto grid w-full max-w-4xl gap-6">
+          <div className="space-y-4">
             {posts.map((post) =>
               post.has_access ? <PostCard key={post.id} slug={creator.slug} post={post} /> : <LockedPostCard key={post.id} post={post} />,
             )}
           </div>
         )}
       </section>
+
+      <footer className="border-t border-zinc-200/60 py-10 dark:border-zinc-800/70">
+        <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-between gap-4 px-4 text-center md:flex-row md:text-left">
+          <p className="text-xl font-bold text-gradient">MadTV</p>
+          <p className="text-sm text-zinc-500">© 2026 MadTV. Všechna práva vyhrazena.</p>
+          <div className="flex gap-5 text-sm text-zinc-600 dark:text-zinc-300">
+            <Link href="/explore" className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-100">
+              Ukázky
+            </Link>
+            <Link href="/for-creators" className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-100">
+              Pro tvůrce
+            </Link>
+          </div>
+        </div>
+      </footer>
 
       <SubscribeCTA
         creatorSlug={creator.slug}
