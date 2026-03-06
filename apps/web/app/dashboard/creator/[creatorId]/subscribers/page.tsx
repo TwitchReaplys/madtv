@@ -18,7 +18,7 @@ export default async function CreatorSubscribersPage({ params }: PageProps) {
     .order("created_at", { ascending: false });
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle>Subscribers · {creator.title}</CardTitle>
       </CardHeader>

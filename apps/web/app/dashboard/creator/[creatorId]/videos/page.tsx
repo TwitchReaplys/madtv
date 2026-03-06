@@ -26,7 +26,7 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Video library · {creator.title}</h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
           Nahraj video přes Bunny a ulož ho do knihovny tvůrce.
@@ -72,7 +72,7 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Library items</h2>
         <div className="mt-4 space-y-3">
           {(videos ?? []).length === 0 ? (

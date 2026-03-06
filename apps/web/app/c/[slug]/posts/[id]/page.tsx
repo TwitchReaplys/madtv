@@ -163,6 +163,8 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
 
   const canComment = activeRank >= 1 || isCreatorAdmin;
   const hasVideo = (assets ?? []).some((asset) => asset.type === "bunny_video");
+  const visibilityLabel =
+    detail.visibility === "public" ? "Veřejný" : detail.visibility === "members" ? "Pro členy" : "Prémiový";
 
   const commentError = getMessage(query, "commentError");
   const commentSuccess = getMessage(query, "commentSuccess");
@@ -180,15 +182,22 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
           ← Zpět na profil tvůrce
         </Link>
         <Badge variant="secondary">
-          {detail.visibility}
-          {detail.visibility === "tier" && detail.min_tier_rank ? ` ${detail.min_tier_rank}+` : ""}
+          {visibilityLabel}
+          {detail.visibility === "tier" && detail.min_tier_rank ? ` ${detail.min_tier_rank}+` : null}
         </Badge>
       </div>
 
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle className="text-3xl tracking-tight">{detail.title}</CardTitle>
-          <p className="text-xs text-zinc-500">Publikováno {new Date(detail.published_at).toLocaleString()}</p>
+          <p className="text-xs text-zinc-500">
+            Publikováno{" "}
+            {new Date(detail.published_at).toLocaleDateString("cs-CZ", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
         </CardHeader>
         <CardContent className="space-y-6">
           {detail.has_access ? (
@@ -242,7 +251,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
           <Notice message={commentError} variant="error" />
 
           {!isAuthenticated ? (
-            <Card>
+            <Card className="glass">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">Pro přidání komentáře se přihlas do účtu.</p>
                 <Button asChild size="sm">
@@ -251,7 +260,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
               </CardContent>
             </Card>
           ) : !canComment ? (
-            <Card>
+            <Card className="glass">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">Komentáře mohou psát aktivní členové tvůrce.</p>
                 <Button asChild size="sm">
@@ -260,7 +269,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
               </CardContent>
             </Card>
           ) : (
-            <Card>
+            <Card className="glass">
               <CardContent className="pt-6">
                 <form action={createCommentAction} className="space-y-3">
                   <input type="hidden" name="postId" value={id} />
@@ -281,7 +290,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
                 const authorName = profile?.display_name || profile?.username || "Člen komunity";
 
                 return (
-                  <Card key={comment.id}>
+                  <Card key={comment.id} className="glass">
                     <CardContent className="space-y-2 pt-4">
                       <div className="flex items-center gap-2 text-xs text-zinc-500">
                         <span className="font-medium text-zinc-700 dark:text-zinc-200">{authorName}</span>
@@ -294,7 +303,7 @@ export default async function CreatorPostDetailPage({ params, searchParams }: Pa
                 );
               })
             ) : (
-              <Card>
+              <Card className="glass">
                 <CardContent className="pt-6 text-sm text-zinc-600 dark:text-zinc-300">
                   Zatím žádné komentáře. Buď první, kdo zareaguje.
                 </CardContent>

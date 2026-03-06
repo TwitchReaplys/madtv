@@ -28,14 +28,14 @@ export function SubscribeButton({ tierId }: SubscribeButtonProps) {
       const data = (await response.json()) as { url?: string; error?: string };
 
       if (!response.ok || !data.url) {
-        setError(data.error ?? "Unable to start checkout");
+        setError(data.error ?? "Nepodařilo se spustit platbu");
         setPending(false);
         return;
       }
 
       window.location.href = data.url;
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Unexpected error");
+      setError(requestError instanceof Error ? requestError.message : "Neočekávaná chyba");
       setPending(false);
     }
   }
@@ -43,7 +43,7 @@ export function SubscribeButton({ tierId }: SubscribeButtonProps) {
   return (
     <div className="space-y-2">
       <Button type="button" onClick={handleSubscribe} disabled={pending} className="w-full">
-        {pending ? "Redirecting..." : "Subscribe"}
+        {pending ? "Přesměrování..." : "Odebírat"}
       </Button>
       {error ? <p className="text-xs text-rose-600 dark:text-rose-300">{error}</p> : null}
     </div>

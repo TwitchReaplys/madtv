@@ -1,45 +1,54 @@
 import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-zinc-200/70 bg-white/90 p-8 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90 sm:p-12">
-      <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-[var(--accent)]/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -left-20 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl" />
+    <section className="relative flex min-h-[78vh] items-center justify-center overflow-hidden rounded-3xl px-4 py-16 sm:px-8">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-[var(--accent)]/10" />
+      <div className="pointer-events-none absolute -right-32 top-1/4 h-96 w-96 rounded-full bg-[var(--accent)]/20 blur-3xl" />
+      <div className="pointer-events-none absolute -left-32 bottom-1/4 h-96 w-96 rounded-full bg-[var(--accent)]/10 blur-3xl" />
 
-      <div className="relative space-y-6">
-        <p className="inline-flex rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--accent)]">
-          Membership platform MVP
-        </p>
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
-          Build your creator community. Publish once, monetize monthly, keep control.
+      <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full px-4 py-2 glass text-sm text-zinc-600 dark:text-zinc-300">
+          <Sparkles className="h-4 w-4 text-[var(--accent)]" />
+          Nová éra tvorby obsahu
+        </div>
+
+        <h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-7xl">
+          Monetizuj svou
+          <br />
+          <span className="text-gradient">kreativitu</span>
         </h1>
-        <p className="max-w-2xl text-base leading-7 text-zinc-600 dark:text-zinc-300">
-          MadTV combines Next.js, Supabase RLS, Stripe Subscriptions, and Bunny Stream into a conversion-first
-          platform for serious creators.
+
+        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-xl">
+          Vytvoř si komunitu, sdílej exkluzivní obsah a vydělávej na tom, co tě baví. Jednoduchá platforma pro
+          tvůrce.
         </p>
 
-        <div className="flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link href="/login">Start as creator</Link>
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
+          <Button asChild size="lg" className="glow px-8">
+            <Link href="/dashboard">
+              Začni tvořit
+              <ArrowRight className="h-5 w-5" />
+            </Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/dashboard">Open dashboard</Link>
+          <Button asChild variant="outline" size="lg" className="px-8">
+            <Link href="/explore">Prohlédnout ukázky</Link>
           </Button>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-3 gap-8">
           {[
-            ["RLS-first", "Access control in Postgres, not only UI"],
-            ["Subscriptions", "Stripe Checkout + Billing Portal + Webhooks"],
-            ["Video-native", "Direct Bunny TUS upload with secure embeds"],
-          ].map(([title, text]) => (
-            <Card key={title} className="p-4">
-              <p className="text-sm font-semibold">{title}</p>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{text}</p>
-            </Card>
+            { value: "10K+", label: "Tvůrců" },
+            { value: "500K+", label: "Odběratelů" },
+            { value: "25M+", label: "CZK vyplaceno" },
+          ].map((stat) => (
+            <div key={stat.label}>
+              <p className="text-2xl font-bold text-gradient sm:text-3xl">{stat.value}</p>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">{stat.label}</p>
+            </div>
           ))}
         </div>
       </div>

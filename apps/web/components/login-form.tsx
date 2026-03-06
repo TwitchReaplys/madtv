@@ -69,35 +69,38 @@ export function LoginForm({ nextPath }: LoginFormProps) {
   }
 
   return (
-    <Card className="animate-fade-slide-up">
-      <CardHeader>
-        <CardTitle>Account access</CardTitle>
-        <CardDescription>Sign in or create a new account to open dashboard and subscriptions.</CardDescription>
+    <Card className="glass animate-fade-slide-up">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">{mode === "sign-up" ? "Vytvořit účet" : "Přihlásit se"}</CardTitle>
+        <CardDescription>
+          {mode === "sign-up" ? "Zaregistruj se a začni tvořit." : "Přihlas se do svého účtu."}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <Tabs value={mode} onValueChange={(value) => setMode(value as AuthMode)}>
           <TabsList className="w-full">
             <TabsTrigger className="w-full" value="sign-in">
-              Sign in
+              Přihlášení
             </TabsTrigger>
             <TabsTrigger className="w-full" value="sign-up">
-              Sign up
+              Registrace
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Email</label>
-            <Input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+            <label className="mb-1 block text-sm font-medium">E-mail</label>
+            <Input type="email" placeholder="jan@example.com" required value={email} onChange={(event) => setEmail(event.target.value)} />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Password</label>
+            <label className="mb-1 block text-sm font-medium">Heslo</label>
             <Input
               type="password"
               required
               minLength={6}
+              placeholder="••••••••"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
@@ -105,8 +108,8 @@ export function LoginForm({ nextPath }: LoginFormProps) {
 
           {message ? <p className="text-sm text-rose-600 dark:text-rose-300">{message}</p> : null}
 
-          <Button type="submit" disabled={pending} className="w-full">
-            {pending ? "Please wait..." : mode === "sign-in" ? "Sign in" : "Create account"}
+          <Button type="submit" disabled={pending} className="w-full glow">
+            {pending ? "Počkej prosím..." : mode === "sign-in" ? "Přihlásit se" : "Zaregistrovat se"}
           </Button>
         </form>
       </CardContent>

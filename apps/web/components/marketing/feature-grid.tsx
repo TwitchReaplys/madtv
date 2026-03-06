@@ -1,43 +1,51 @@
-import { Lock, PlayCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { CreditCard, Shield, Users, Video } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 const features = [
   {
-    icon: ShieldCheck,
-    title: "Database-enforced access",
-    description: "Post visibility is enforced in SQL policies via RLS helper functions.",
+    icon: Video,
+    title: "Video obsah",
+    description: "Nahrávej videa přímo na platformu. Rychlý streaming s globální CDN.",
   },
   {
-    icon: PlayCircle,
-    title: "Video uploads that scale",
-    description: "Client uploads directly to Bunny Stream over TUS, keeping your server lean.",
+    icon: CreditCard,
+    title: "Jednoduché platby",
+    description: "Předplatné přes Stripe. Automatická fakturace a správa zákazníků.",
   },
   {
-    icon: Lock,
-    title: "Secure billing lifecycle",
-    description: "Checkout, portal and idempotent Stripe webhook processing with background jobs.",
+    icon: Shield,
+    title: "Bezpečný přístup",
+    description: "Obsah chráněný na úrovni databáze. Žádné obcházení paywallu.",
   },
   {
-    icon: Sparkles,
-    title: "Creator microsites",
-    description: "Branded public pages with accent color, tier cards, locked teasers, and paywalls.",
+    icon: Users,
+    title: "Komunita",
+    description: "Buduj komunitu kolem obsahu. Tiery pro různé úrovně přístupu.",
   },
 ];
 
 export function FeatureGrid() {
   return (
-    <section className="grid gap-4 md:grid-cols-2">
+    <section className="space-y-8 py-10">
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Vše co potřebuješ</h2>
+        <p className="mt-3 text-lg text-zinc-600 dark:text-zinc-300">Kompletní sada nástrojů pro moderní tvůrce obsahu.</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
       {features.map((feature) => (
-        <Card key={feature.title} className="transition-transform duration-200 hover:-translate-y-0.5">
-          <CardHeader>
-            <feature.icon className="h-5 w-5 text-[var(--accent)]" />
-            <CardTitle className="mt-3 text-lg">{feature.title}</CardTitle>
-            <CardDescription>{feature.description}</CardDescription>
-          </CardHeader>
-          <CardContent />
+        <Card key={feature.title} className="glass transition-all duration-300 hover:border-[var(--accent)]/30">
+          <CardContent className="p-8">
+            <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent)]/10">
+              <feature.icon className="h-6 w-6 text-[var(--accent)]" />
+            </div>
+            <h3 className="mb-2 text-xl font-semibold">{feature.title}</h3>
+            <p className="leading-relaxed text-zinc-600 dark:text-zinc-300">{feature.description}</p>
+          </CardContent>
         </Card>
       ))}
+      </div>
     </section>
   );
 }

@@ -53,7 +53,7 @@ export default async function CreatorProfileByIdPage({ params, searchParams }: P
       : "none";
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle>Creator profile</CardTitle>
         <CardDescription>Uprav veřejný profil a featured media blok.</CardDescription>

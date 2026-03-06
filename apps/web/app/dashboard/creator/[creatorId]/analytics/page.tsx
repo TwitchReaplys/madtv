@@ -78,7 +78,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>Analytics · {creator.title}</CardTitle>
         </CardHeader>
@@ -105,13 +105,13 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="glass">
           <CardContent className="pt-6">
             <p className="text-sm text-zinc-500">Active subscribers</p>
             <p className="text-2xl font-bold">{activeSubscribers ?? 0}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="glass">
           <CardContent className="pt-6">
             <p className="text-sm text-zinc-500">Revenue gross / net</p>
             <p className="text-xl font-bold">
@@ -119,7 +119,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="glass">
           <CardContent className="pt-6">
             <p className="text-sm text-zinc-500">Views / Play intents</p>
             <p className="text-xl font-bold">
@@ -129,7 +129,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
         </Card>
       </div>
 
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>Daily series</CardTitle>
         </CardHeader>

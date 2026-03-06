@@ -69,7 +69,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>Creator onboarding</CardTitle>
         </CardHeader>
@@ -102,7 +102,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>1) Identifikační údaje tvůrce</CardTitle>
         </CardHeader>
@@ -180,7 +180,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>2) Ověření emailu</CardTitle>
         </CardHeader>
@@ -195,7 +195,7 @@ export default async function CreatorOnboardingPage({ params, searchParams }: Pa
         </CardContent>
       </Card>
 
-      <Card id="stripe-connect">
+      <Card id="stripe-connect" className="glass">
         <CardHeader>
           <CardTitle>3) Stripe Connect</CardTitle>
         </CardHeader>

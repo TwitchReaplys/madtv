@@ -25,7 +25,7 @@ export default async function NewPostPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">New post</h2>
         <p className="mt-2 text-sm text-zinc-700">
           You need a creator profile first. Go to <Link href="/dashboard/creator" className="underline">Creator profile</Link>.
@@ -35,7 +35,7 @@ export default async function NewPostPage({ searchParams }: PageProps) {
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl glass p-6">
       <h2 className="text-lg font-semibold">New post</h2>
       <p className="mt-2 text-sm text-zinc-600">Create text post with optional Bunny Stream video attachment.</p>
 

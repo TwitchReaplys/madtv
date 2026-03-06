@@ -28,8 +28,8 @@ export default async function CreatorSectionLayout({ children, params }: LayoutP
 
   return (
     <div className="space-y-5">
-      <Card className="overflow-hidden">
-        <div className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/12 via-sky-500/8 to-transparent px-6 py-4 dark:border-zinc-800">
+      <Card className="overflow-hidden glass">
+        <div className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/18 via-sky-500/10 to-transparent px-6 py-4 dark:border-zinc-800">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Creator workspace</p>
           <p className="mt-1 text-lg font-semibold">
             {creator.title} <span className="text-zinc-500">@{creator.slug}</span>

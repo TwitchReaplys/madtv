@@ -63,8 +63,8 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   const { slug } = await params;
   const query = await searchParams;
 
-  const checkoutSuccess = query.checkout === "success" ? "Subscription completed. Access should be available shortly." : null;
-  const checkoutCancel = query.checkout === "cancel" ? "Checkout was canceled." : null;
+  const checkoutSuccess = query.checkout === "success" ? "Předplatné bylo aktivováno. Přístup se brzy propíše." : null;
+  const checkoutCancel = query.checkout === "cancel" ? "Platba byla zrušena." : null;
 
   const supabase = await createServerSupabaseClient();
   const cookieStore = await cookies();
@@ -76,7 +76,7 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
     notFound();
   }
 
-  const [{ data: tiers }, { data: previewRows }, { data: memberRank }] = await Promise.all([
+  const [{ data: tiers }, { data: previewRows }, { data: memberRank }, { count: activeSubscribers }] = await Promise.all([
     supabase
       .from("tiers")
       .select("id, name, description, price_cents, currency, rank")
@@ -89,6 +89,11 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
     supabase.rpc("active_subscription_rank", {
       p_creator_id: creator.id,
     }),
+    supabase
+      .from("subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("creator_id", creator.id)
+      .in("status", ["active", "trialing"]),
   ]);
 
   const isOwner = user?.id === creator.owner_user_id;
@@ -132,6 +137,8 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         avatarUrl={creator.avatar_url}
         socialLinks={socialLinks}
         ownerView={isOwner}
+        subscriberCount={activeSubscribers ?? undefined}
+        postCount={posts.length}
       />
 
       <div className="mx-auto w-full max-w-4xl">
@@ -158,27 +165,25 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
 
       <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-5xl space-y-4 scroll-mt-20">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Membership tiers</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">Choose your access level and unlock premium posts.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
         </div>
         <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
       </section>
 
       <section className="mx-auto w-full max-w-5xl space-y-4">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Latest posts</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Public posts are open. Members-only posts include preview teasers.
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">Příspěvky</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">Veřejné příspěvky jsou dostupné všem, ostatní mají náhled.</p>
         </div>
 
         {posts.length === 0 ? (
-          <Card>
+          <Card className="glass">
             <CardHeader>
-              <CardTitle>No posts yet</CardTitle>
+              <CardTitle>Zatím žádné příspěvky</CardTitle>
             </CardHeader>
             <CardContent className="text-sm text-zinc-600 dark:text-zinc-300">
-              This creator has not published any posts yet.
+              Tento tvůrce zatím nic nepublikoval.
             </CardContent>
           </Card>
         ) : (
@@ -190,7 +195,16 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         )}
       </section>
 
-      <SubscribeCTA creatorSlug={creator.slug} hasMembership={hasMembership || isOwner} />
+      <SubscribeCTA
+        creatorSlug={creator.slug}
+        creatorName={creator.title}
+        lowestPrice={
+          tiers && tiers.length > 0
+            ? `${((tiers[0].price_cents as number) / 100).toLocaleString("cs-CZ")} ${(tiers[0].currency as string)}`
+            : undefined
+        }
+        hasMembership={hasMembership || isOwner}
+      />
     </div>
   );
 }

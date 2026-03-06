@@ -14,7 +14,7 @@ export default async function CreatorSettingsPage({ params }: PageProps) {
   const { creator } = await requireCreatorAccess(creatorId);
 
   return (
-    <Card>
+    <Card className="glass">
       <CardHeader>
         <CardTitle>Settings · {creator.title}</CardTitle>
       </CardHeader>

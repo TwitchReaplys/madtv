@@ -25,7 +25,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">New tier for {creator.title}</h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Stripe Product + Price will be created automatically.</p>
 
@@ -69,7 +69,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Existing tiers</h2>
         <div className="mt-4 space-y-3">
           {(tiers ?? []).length === 0 ? (

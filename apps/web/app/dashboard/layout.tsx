@@ -22,11 +22,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden">
-        <div className="bg-gradient-to-r from-[var(--accent)]/12 via-sky-500/10 to-transparent px-6 py-6">
+      <Card className="overflow-hidden glass">
+        <div className="bg-gradient-to-r from-[var(--accent)]/16 via-sky-500/12 to-transparent px-6 py-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Account workspace</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">Účet</p>
               <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
               <p className="text-sm text-zinc-600 dark:text-zinc-300">{user.email}</p>
             </div>
@@ -37,8 +37,8 @@ export default async function DashboardLayout({
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            {portalLinks.map((portal) => (
-              <Button key={portal.href} asChild size="sm">
+            {portalLinks.map((portal, index) => (
+              <Button key={portal.href} asChild size="sm" variant={index === 0 ? "default" : "outline"}>
                 <Link href={portal.href}>{portal.label}</Link>
               </Button>
             ))}

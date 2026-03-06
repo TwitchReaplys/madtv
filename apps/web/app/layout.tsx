@@ -49,33 +49,44 @@ export default async function RootLayout({
       <body className={`${dmSans.variable} ${jetBrainsMono.variable} min-h-screen bg-background text-foreground antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <div className="relative min-h-screen">
-            <header className="sticky top-0 z-50 border-b border-zinc-200/70 bg-white/80 backdrop-blur-md dark:border-zinc-800/70 dark:bg-zinc-950/80">
-              <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-                <Link href="/" className="text-base font-bold tracking-tight sm:text-lg">
+            <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-200/60 glass dark:border-zinc-800/80">
+              <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+                <Link href="/" className="text-lg font-bold tracking-tight text-gradient">
                   MadTV
                 </Link>
-                <nav className="flex items-center gap-1 sm:gap-2">
-                  <Link href="/explore" className="rounded-lg px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                    Explore
+                <nav className="flex items-center gap-2 sm:gap-3">
+                  <Link
+                    href="/explore"
+                    className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-100 sm:inline"
+                  >
+                    Ukázky
                   </Link>
-                  <Link href="/#jak-to-funguje" className="rounded-lg px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                    Jak to funguje
-                  </Link>
-                  <Link href="/for-creators" className="rounded-lg px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                  <Link
+                    href="/for-creators"
+                    className="hidden text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-100 sm:inline"
+                  >
                     Pro tvůrce
                   </Link>
-                  {user ? (
-                    <AccountMenu email={user.email ?? null} />
-                  ) : (
-                    <Link href="/login" className="rounded-lg px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                  {user ? <AccountMenu email={user.email ?? null} /> : null}
+                  {!user ? (
+                    <Link
+                      href="/login"
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-100"
+                    >
                       Přihlásit se
                     </Link>
-                  )}
+                  ) : null}
+                  <Link
+                    href="/dashboard"
+                    className="hidden rounded-lg bg-[var(--accent)] px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 sm:inline-flex"
+                  >
+                    Dashboard
+                  </Link>
                   <ThemeToggle />
                 </nav>
               </div>
             </header>
-            <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-8 sm:px-6">{children}</div>
+            <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-24 sm:px-6">{children}</div>
           </div>
         </ThemeProvider>
       </body>

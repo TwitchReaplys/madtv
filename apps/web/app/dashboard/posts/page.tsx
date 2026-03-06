@@ -24,7 +24,7 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Posts</h2>
         <p className="mt-2 text-sm text-zinc-700">Create a creator profile first, then you can publish posts.</p>
       </section>
@@ -38,7 +38,7 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
     .order("published_at", { ascending: false });
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl glass p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Posts</h2>
         <Link href="/dashboard/posts/new" className="rounded-md bg-zinc-950 px-3 py-2 text-sm font-semibold text-white">
@@ -60,7 +60,7 @@ export default async function DashboardPostsPage({ searchParams }: PageProps) {
             const hasVideo = assets.some((asset) => asset.type === "bunny_video");
 
             return (
-              <article key={post.id} className="rounded-md border border-zinc-200 p-4">
+              <article key={post.id} className="rounded-md border border-zinc-200/80 p-4 dark:border-zinc-800/80">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">{post.title}</h3>

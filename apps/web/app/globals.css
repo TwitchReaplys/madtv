@@ -3,29 +3,48 @@
 :root {
   --font-sans: var(--font-dm-sans);
   --font-mono: var(--font-jetbrains-mono);
-  --background: #f7f7f8;
-  --foreground: #111318;
+
+  --background: #f7f8fa;
+  --foreground: #0f172a;
   --accent: #16a34a;
+
+  --card: #ffffff;
+  --card-muted: #f8fafc;
+  --border: #dbe1ea;
 }
 
 .dark {
-  --background: #090a0d;
-  --foreground: #f4f5f7;
+  --background: #070a12;
+  --foreground: #f3f7ff;
+
+  --card: #0f1524;
+  --card-muted: #101828;
+  --border: #253249;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
+  min-height: 100vh;
   background-image:
-    radial-gradient(circle at 0% -10%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 42%),
-    radial-gradient(circle at 90% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 40%);
+    radial-gradient(circle at 12% -8%, color-mix(in srgb, var(--accent) 16%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 88% 0%, rgba(14, 165, 233, 0.12) 0%, transparent 40%);
+  background-attachment: fixed;
 }
 
 .dark body {
   background-image:
-    radial-gradient(circle at 10% -10%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 45%),
-    radial-gradient(circle at 90% -10%, rgba(14, 165, 233, 0.15) 0%, transparent 45%);
+    radial-gradient(circle at 14% -12%, color-mix(in srgb, var(--accent) 24%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 86% -8%, rgba(14, 165, 233, 0.2) 0%, transparent 45%);
 }
 
 code,
@@ -38,6 +57,7 @@ pre {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -46,4 +66,21 @@ pre {
 
 .animate-fade-slide-up {
   animation: fade-slide-up 0.45s ease-out;
+}
+
+.text-gradient {
+  background-image: linear-gradient(90deg, var(--accent), #34d399);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glass {
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  backdrop-filter: blur(14px);
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.glow {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent), 0 20px 40px -28px color-mix(in srgb, var(--accent) 70%, transparent);
 }

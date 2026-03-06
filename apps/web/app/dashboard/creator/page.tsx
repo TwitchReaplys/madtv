@@ -25,7 +25,7 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
 
   if (creatorAccess.length === 0) {
     return (
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>Creator onboarding</CardTitle>
         </CardHeader>
@@ -113,7 +113,7 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="glass">
         <CardHeader>
           <CardTitle>Creator portal</CardTitle>
         </CardHeader>
@@ -126,7 +126,7 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
 
           <div className="grid gap-3">
             {creatorAccess.map((creator) => (
-              <div key={creator.creatorId} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <div key={creator.creatorId} className="rounded-xl border border-zinc-200/80 p-3 dark:border-zinc-800/80">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-medium">{creator.title}</p>
@@ -139,9 +139,9 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
                   {creator.stripeConnectReady ? <Badge variant="secondary">Stripe ready</Badge> : null}
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button asChild size="sm">
-                  <Link href={`/dashboard/creator/${creator.creatorId}/onboarding`}>Onboarding</Link>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button asChild size="sm">
+                    <Link href={`/dashboard/creator/${creator.creatorId}/onboarding`}>Onboarding</Link>
                 </Button>
                 <Button asChild size="sm" variant="outline">
                   <Link href={`/dashboard/creator/${creator.creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>

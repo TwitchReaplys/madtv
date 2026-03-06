@@ -30,7 +30,7 @@ export default async function ForCreatorsPage() {
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-3xl border border-zinc-200/70 bg-white/90 p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/90 sm:p-10">
+      <section className="relative overflow-hidden rounded-3xl glass p-8 sm:p-10">
         <div className="pointer-events-none absolute -right-14 -top-14 h-56 w-56 rounded-full bg-[var(--accent)]/20 blur-3xl" />
         <div className="relative space-y-5">
           <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-5xl">Vydělávej na obsahu bez kompromisů.</h1>
@@ -49,7 +49,7 @@ export default async function ForCreatorsPage() {
           ["Video-first workflow", "Nahráváš přímo do Bunny Streamu a post je po publikaci hned dostupný členům."],
           ["Přístup hlídá databáze", "RLS v Postgresu řeší veřejný/members/tier obsah bez obcházení přes UI."],
         ].map(([title, description]) => (
-          <Card key={title}>
+          <Card key={title} className="glass">
             <CardHeader>
               <CardTitle className="text-lg">{title}</CardTitle>
             </CardHeader>

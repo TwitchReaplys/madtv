@@ -24,7 +24,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
   if (!creator) {
     return (
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Tiers</h2>
         <p className="mt-2 text-sm text-zinc-700">
           You need a creator profile first. Open {" "}
@@ -45,7 +45,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">New tier</h2>
         <p className="mt-2 text-sm text-zinc-600">Creating a tier automatically creates Stripe Product + Price.</p>
 
@@ -111,7 +111,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl glass p-6">
         <h2 className="text-lg font-semibold">Existing tiers</h2>
         <div className="mt-4 space-y-3">
           {(tiers ?? []).length === 0 ? (
