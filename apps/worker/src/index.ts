@@ -1,7 +1,7 @@
 import { processJob } from "./jobs.js";
 import { env } from "./env.js";
 import { logger } from "./logger.js";
-import { createQueueWorker, redis } from "./queue.js";
+import { assertRedisConnection, createQueueWorker, redis } from "./queue.js";
 import { supabase } from "./supabase.js";
 
 const worker = createQueueWorker(async (job) => {
@@ -53,10 +53,25 @@ async function writeHeartbeat() {
   }
 }
 
-void writeHeartbeat();
-heartbeatTimer = setInterval(() => {
-  void writeHeartbeat();
-}, 60_000);
+async function bootstrap() {
+  try {
+    await assertRedisConnection();
+    logger.info({ redisStatus: redis.status }, "Redis connection check passed");
+  } catch (error) {
+    logger.error(
+      { error: error instanceof Error ? error.message : String(error), redisStatus: redis.status },
+      "Worker startup failed: Redis is not reachable",
+    );
+    process.exit(1);
+  }
+
+  await writeHeartbeat();
+  heartbeatTimer = setInterval(() => {
+    void writeHeartbeat();
+  }, 60_000);
+}
+
+void bootstrap();
 
 async function shutdown(signal: string) {
   logger.info({ signal }, "Shutting down worker");

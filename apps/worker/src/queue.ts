@@ -9,6 +9,14 @@ const redis = new IORedis(env.redisUrl, {
   enableReadyCheck: true,
 });
 
+export async function assertRedisConnection() {
+  const pong = await redis.ping();
+
+  if (pong !== "PONG") {
+    throw new Error(`Redis ping failed, expected PONG but got: ${pong}`);
+  }
+}
+
 export const queue = new Queue(QUEUE_NAMES.EVENTS, {
   connection: redis,
   defaultJobOptions: {
