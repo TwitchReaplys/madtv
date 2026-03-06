@@ -74,7 +74,9 @@ export async function POST(request: Request) {
 
   const { data: tier, error: tierError } = await supabase
     .from("tiers")
-    .select("id, creator_id, stripe_price_id, is_active, creators!inner ( slug, stripe_connect_account_id, platform_fee_percent )")
+    .select(
+      "id, creator_id, stripe_price_id, is_active, creators!inner ( slug, stripe_connect_account_id, platform_fee_percent, stripe_connect_charges_enabled )",
+    )
     .eq("id", parsed.data.tierId)
     .single();
 
@@ -126,11 +128,13 @@ export async function POST(request: Request) {
         slug?: string;
         stripe_connect_account_id?: string | null;
         platform_fee_percent?: number | string | null;
+        stripe_connect_charges_enabled?: boolean | null;
       }
     | {
         slug?: string;
         stripe_connect_account_id?: string | null;
         platform_fee_percent?: number | string | null;
+        stripe_connect_charges_enabled?: boolean | null;
       }[]
     | null;
   const creator = Array.isArray(creatorRelation) ? creatorRelation[0] : creatorRelation;
@@ -155,6 +159,15 @@ export async function POST(request: Request) {
 
   if (!creatorSlug) {
     return NextResponse.json({ error: "Creator slug is missing" }, { status: 400 });
+  }
+
+  let canUseOnBehalfOf = Boolean(creator?.stripe_connect_charges_enabled);
+
+  try {
+    const account = await stripe.accounts.retrieve(creatorStripeAccountId);
+    canUseOnBehalfOf = account.capabilities?.card_payments === "active";
+  } catch {
+    // Keep DB fallback when live account lookup fails.
   }
 
   const appUrl = getAppUrl(request);
@@ -190,11 +203,15 @@ export async function POST(request: Request) {
             account: creatorStripeAccountId,
           },
         },
-        on_behalf_of: creatorStripeAccountId,
         application_fee_percent: applicationFeePercent,
         transfer_data: {
           destination: creatorStripeAccountId,
         },
+        ...(canUseOnBehalfOf
+          ? {
+              on_behalf_of: creatorStripeAccountId,
+            }
+          : {}),
       },
       automatic_tax: {
         enabled: true,
