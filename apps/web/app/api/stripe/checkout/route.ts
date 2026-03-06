@@ -180,6 +180,10 @@ export async function POST(request: Request) {
       },
       automatic_tax: {
         enabled: true,
+        liability: {
+          type: "account",
+          account: creatorStripeAccountId,
+        },
       },
       billing_address_collection: "auto",
       customer_update: {

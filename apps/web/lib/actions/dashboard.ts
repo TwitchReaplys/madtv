@@ -781,7 +781,7 @@ export async function createTierAction(formData: FormData) {
     product: product.id,
     unit_amount: parsed.data.priceCents,
     currency: currency.toLowerCase(),
-    tax_behavior: "exclusive",
+    tax_behavior: "inclusive",
     recurring: {
       interval: "month",
     },
