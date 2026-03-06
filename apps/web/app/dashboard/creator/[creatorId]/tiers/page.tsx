@@ -26,8 +26,8 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">New tier for {creator.title}</h2>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Stripe Product + Price will be created automatically.</p>
+        <h2 className="text-lg font-semibold">Nový tier pro {creator.title}</h2>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Stripe Product + Price se vytvoří automaticky.</p>
 
         <div className="mt-4 space-y-3">
           <Notice message={success} variant="success" />
@@ -39,22 +39,22 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
           <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/tiers`} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Name</label>
+            <label className="mb-1 block text-sm font-medium">Název</label>
             <input name="name" type="text" required className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Description</label>
+            <label className="mb-1 block text-sm font-medium">Popis</label>
             <textarea name="description" rows={3} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Price (cents)</label>
+              <label className="mb-1 block text-sm font-medium">Cena (haléře)</label>
               <input name="priceCents" type="number" min={100} step={1} required defaultValue={199} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Currency</label>
+              <label className="mb-1 block text-sm font-medium">Měna</label>
               <input name="currency" type="text" required defaultValue="CZK" maxLength={3} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm uppercase dark:border-zinc-700 dark:bg-zinc-950" />
             </div>
             <div>
@@ -64,16 +64,16 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
           </div>
 
           <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-            Create tier
+            Vytvořit tier
           </button>
         </form>
       </section>
 
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Existing tiers</h2>
+        <h2 className="text-lg font-semibold">Existující tiery</h2>
         <div className="mt-4 space-y-3">
           {(tiers ?? []).length === 0 ? (
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">No tiers yet.</p>
+            <p className="text-sm text-zinc-700 dark:text-zinc-300">Zatím žádné tiery.</p>
           ) : (
             tiers?.map((tier) => (
               <article key={tier.id} className="rounded-md border border-zinc-200 p-4 dark:border-zinc-800">
@@ -93,7 +93,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
                         : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                     }`}
                   >
-                    {tier.is_active ? "Active" : "Inactive"}
+                    {tier.is_active ? "Aktivní" : "Neaktivní"}
                   </span>
                 </div>
 
@@ -103,7 +103,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
                     <input type="hidden" name="isActive" value={tier.is_active ? "false" : "true"} />
                     <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/tiers`} />
                     <button type="submit" className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800">
-                      {tier.is_active ? "Deactivate" : "Activate"}
+                      {tier.is_active ? "Deaktivovat" : "Aktivovat"}
                     </button>
                   </form>
 
@@ -111,7 +111,7 @@ export default async function CreatorTiersPage({ params, searchParams }: PagePro
                     <input type="hidden" name="tierId" value={tier.id} />
                     <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/tiers`} />
                     <button type="submit" className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-700 dark:text-rose-300 dark:hover:bg-rose-950/40">
-                      Delete
+                      Smazat
                     </button>
                   </form>
                 </div>

@@ -4,7 +4,6 @@ import { ExploreCard, type ExploreCreator } from "@/components/creator/explore-c
 import { FAQ } from "@/components/marketing/faq";
 import { FeatureGrid } from "@/components/marketing/feature-grid";
 import { Hero } from "@/components/marketing/hero";
-import { PricingCards } from "@/components/marketing/pricing-cards";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -59,7 +58,6 @@ export default async function HomePage() {
         )}
       </section>
 
-      <PricingCards />
       <FAQ />
 
       <footer className="border-t border-zinc-200/60 py-10 dark:border-zinc-800/70">

@@ -23,7 +23,7 @@ export function TierCards({ tiers, isAuthenticated, loginUrl }: TierCardsProps) 
   if (tiers.length === 0) {
     return (
       <Card className="glass">
-        <CardContent className="pt-6 text-sm text-zinc-600 dark:text-zinc-300">No active tiers yet.</CardContent>
+        <CardContent className="pt-6 text-sm text-zinc-600 dark:text-zinc-300">Tento tvůrce zatím nemá aktivní tiery.</CardContent>
       </Card>
     );
   }

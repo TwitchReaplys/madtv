@@ -8,9 +8,9 @@ export default async function ViewerBillingPage() {
   await requireDashboardUser();
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden glass">
       <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/10 via-sky-500/6 to-transparent dark:border-zinc-800">
-        <CardTitle>Billing</CardTitle>
+        <CardTitle>Platby</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 pt-6">
         <p className="text-sm text-zinc-600 dark:text-zinc-300">

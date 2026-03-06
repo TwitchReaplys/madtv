@@ -43,8 +43,8 @@ export default async function CreatorEditPostPage({ params, searchParams }: Page
   const existingVideo = (Array.isArray(post.post_assets) ? post.post_assets : []).find((asset) => asset.type === "bunny_video");
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold">Edit post · {creator.title}</h2>
+    <section className="rounded-2xl glass p-6">
+      <h2 className="text-lg font-semibold">Upravit příspěvek · {creator.title}</h2>
 
       <div className="mt-4 space-y-3">
         <Notice message={success} variant="success" />
@@ -58,38 +58,38 @@ export default async function CreatorEditPostPage({ params, searchParams }: Page
         <input type="hidden" name="successPath" value={`/dashboard/creator/${creatorId}/posts`} />
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Title</label>
+          <label className="mb-1 block text-sm font-medium">Nadpis</label>
           <input type="text" name="title" required defaultValue={post.title} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Body</label>
+          <label className="mb-1 block text-sm font-medium">Obsah</label>
           <textarea name="body" rows={8} defaultValue={post.body ?? ""} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Visibility</label>
+            <label className="mb-1 block text-sm font-medium">Viditelnost</label>
             <select name="visibility" defaultValue={post.visibility} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950">
-              <option value="public">Public</option>
-              <option value="members">Members</option>
-              <option value="tier">Tier minimum rank</option>
+              <option value="public">Veřejný</option>
+              <option value="members">Pro členy</option>
+              <option value="tier">Dle tier ranku</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Min tier rank</label>
+            <label className="mb-1 block text-sm font-medium">Minimální tier rank</label>
             <input type="number" name="minTierRank" min={1} step={1} defaultValue={post.min_tier_rank ?? ""} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Attach video from creator library</label>
+          <label className="mb-1 block text-sm font-medium">Připojit video z creator knihovny</label>
           <select
             name="creatorVideoId"
             defaultValue={existingVideo?.creator_video_id ?? ""}
             className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
           >
-            <option value="">No library video</option>
+            <option value="">Bez knihovního videa</option>
             {(creatorVideos ?? []).map((video) => (
               <option key={video.id} value={video.id}>
                 {video.title} ({video.status})
@@ -99,7 +99,7 @@ export default async function CreatorEditPostPage({ params, searchParams }: Page
         </div>
 
         <BunnyUploader
-          title="Replace or keep direct Bunny video"
+          title="Nahradit nebo ponechat přímé Bunny video"
           creatorId={creatorId}
           initialVideoId={existingVideo?.bunny_video_id ?? null}
           initialLibraryId={existingVideo?.bunny_library_id ?? null}
@@ -107,11 +107,11 @@ export default async function CreatorEditPostPage({ params, searchParams }: Page
 
         <label className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
           <input type="checkbox" name="removeVideo" value="true" />
-          Remove existing video (unless a new upload or library item is provided)
+          Odstranit existující video (pokud není dodaný nový upload nebo knihovní video)
         </label>
 
         <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-          Save post
+          Uložit příspěvek
         </button>
       </form>
     </section>

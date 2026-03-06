@@ -17,13 +17,13 @@ export default async function CreatorSectionLayout({ children, params }: LayoutP
   const { creator } = await requireCreatorAccess(creatorId);
 
   const workspaceLinks = [
-    { href: `/dashboard/creator/${creatorId}/profile`, label: "Profile" },
-    { href: `/dashboard/creator/${creatorId}/tiers`, label: "Tiers" },
-    { href: `/dashboard/creator/${creatorId}/posts`, label: "Posts" },
-    { href: `/dashboard/creator/${creatorId}/videos`, label: "Videos" },
-    { href: `/dashboard/creator/${creatorId}/subscribers`, label: "Subscribers" },
-    { href: `/dashboard/creator/${creatorId}/analytics`, label: "Analytics" },
-    { href: `/dashboard/creator/${creatorId}/settings`, label: "Settings" },
+    { href: `/dashboard/creator/${creatorId}/profile`, label: "Profil" },
+    { href: `/dashboard/creator/${creatorId}/tiers`, label: "Tiery" },
+    { href: `/dashboard/creator/${creatorId}/posts`, label: "Příspěvky" },
+    { href: `/dashboard/creator/${creatorId}/videos`, label: "Videa" },
+    { href: `/dashboard/creator/${creatorId}/subscribers`, label: "Odběratelé" },
+    { href: `/dashboard/creator/${creatorId}/analytics`, label: "Analytika" },
+    { href: `/dashboard/creator/${creatorId}/settings`, label: "Nastavení" },
   ];
 
   return (

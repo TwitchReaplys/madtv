@@ -24,7 +24,7 @@ export default async function ViewerProfilePage({ searchParams }: PageProps) {
     .maybeSingle();
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden glass">
       <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/10 via-sky-500/6 to-transparent dark:border-zinc-800">
         <CardTitle>Profil</CardTitle>
       </CardHeader>
@@ -35,11 +35,11 @@ export default async function ViewerProfilePage({ searchParams }: PageProps) {
         <form action={updateViewerProfileAction} className="space-y-4">
           <input type="hidden" name="returnPath" value="/dashboard/viewer/profile" />
           <div>
-            <label className="mb-1 block text-sm font-medium">Username</label>
+            <label className="mb-1 block text-sm font-medium">Uživatelské jméno</label>
             <Input name="username" defaultValue={profile?.username ?? ""} />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Display name</label>
+            <label className="mb-1 block text-sm font-medium">Zobrazované jméno</label>
             <Input name="displayName" defaultValue={profile?.display_name ?? ""} />
           </div>
           <div>

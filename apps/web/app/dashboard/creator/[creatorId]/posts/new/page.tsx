@@ -27,11 +27,9 @@ export default async function CreatorNewPostPage({ params, searchParams }: PageP
     .order("created_at", { ascending: false });
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <h2 className="text-lg font-semibold">New post · {creator.title}</h2>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
-        Text + optional video from library or direct Bunny upload.
-      </p>
+    <section className="rounded-2xl glass p-6">
+      <h2 className="text-lg font-semibold">Nový příspěvek · {creator.title}</h2>
+      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">Text + volitelné video z knihovny nebo přímý Bunny upload.</p>
 
       <div className="mt-4 space-y-3">
         <Notice message={success} variant="success" />
@@ -44,35 +42,35 @@ export default async function CreatorNewPostPage({ params, searchParams }: PageP
         <input type="hidden" name="successPath" value={`/dashboard/creator/${creatorId}/posts`} />
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Title</label>
+          <label className="mb-1 block text-sm font-medium">Nadpis</label>
           <input type="text" name="title" required className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Body</label>
+          <label className="mb-1 block text-sm font-medium">Obsah</label>
           <textarea name="body" rows={8} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Visibility</label>
+            <label className="mb-1 block text-sm font-medium">Viditelnost</label>
             <select name="visibility" defaultValue="public" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950">
-              <option value="public">Public</option>
-              <option value="members">Members</option>
-              <option value="tier">Tier minimum rank</option>
+              <option value="public">Veřejný</option>
+              <option value="members">Pro členy</option>
+              <option value="tier">Dle tier ranku</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Min tier rank (only for tier visibility)</label>
+            <label className="mb-1 block text-sm font-medium">Minimální tier rank (pro režim tier)</label>
             <input type="number" name="minTierRank" min={1} step={1} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950" />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Attach video from creator library</label>
+          <label className="mb-1 block text-sm font-medium">Připojit video z creator knihovny</label>
           <select name="creatorVideoId" defaultValue="" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950">
-            <option value="">No video</option>
+            <option value="">Bez videa</option>
             {(creatorVideos ?? []).map((video) => (
               <option key={video.id} value={video.id}>
                 {video.title} ({video.status})
@@ -87,10 +85,10 @@ export default async function CreatorNewPostPage({ params, searchParams }: PageP
           </p>
         </div>
 
-        <BunnyUploader title="Optional direct Bunny video upload" creatorId={creatorId} />
+        <BunnyUploader title="Volitelný přímý Bunny upload" creatorId={creatorId} />
 
         <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-          Publish post
+          Publikovat příspěvek
         </button>
       </form>
     </section>

@@ -27,7 +27,7 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Video library · {creator.title}</h2>
+        <h2 className="text-lg font-semibold">Video knihovna · {creator.title}</h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
           Nahraj video přes Bunny a ulož ho do knihovny tvůrce.
         </p>
@@ -42,7 +42,7 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
           <input type="hidden" name="returnPath" value={`/dashboard/creator/${creatorId}/videos`} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Video title</label>
+            <label className="mb-1 block text-sm font-medium">Název videa</label>
             <input
               type="text"
               name="title"
@@ -52,7 +52,7 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Custom thumbnail URL (optional)</label>
+            <label className="mb-1 block text-sm font-medium">Vlastní thumbnail URL (volitelné)</label>
             <input
               type="url"
               name="thumbnailUrl"
@@ -67,23 +67,23 @@ export default async function CreatorVideosPage({ params, searchParams }: PagePr
             type="submit"
             className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
           >
-            Save video to library
+            Uložit video do knihovny
           </button>
         </form>
       </section>
 
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Library items</h2>
+        <h2 className="text-lg font-semibold">Položky knihovny</h2>
         <div className="mt-4 space-y-3">
           {(videos ?? []).length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">No videos in library yet.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">V knihovně zatím nejsou žádná videa.</p>
           ) : (
             videos?.map((video) => (
               <article key={video.id} className="rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
                 <p className="font-medium">{video.title}</p>
                 <p className="text-xs text-zinc-500">Bunny ID: {video.bunny_video_id}</p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  Status: {video.status}
+                  Stav: {video.status}
                   {video.duration_seconds ? ` · ${video.duration_seconds}s` : ""}
                 </p>
                 {video.thumbnail_url ? (

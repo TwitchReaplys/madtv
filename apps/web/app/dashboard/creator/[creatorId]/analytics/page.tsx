@@ -80,16 +80,16 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
     <div className="space-y-4">
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Analytics · {creator.title}</CardTitle>
+          <CardTitle>Analytika · {creator.title}</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">From</label>
+              <label className="mb-1 block text-sm font-medium">Od</label>
               <Input type="date" name="from" defaultValue={from} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">To</label>
+              <label className="mb-1 block text-sm font-medium">Do</label>
               <Input type="date" name="to" defaultValue={to} />
             </div>
             <div className="flex items-end">
@@ -97,7 +97,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
                 type="submit"
                 className="h-10 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
               >
-                Apply
+                Použít
               </button>
             </div>
           </form>
@@ -107,13 +107,13 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="glass">
           <CardContent className="pt-6">
-            <p className="text-sm text-zinc-500">Active subscribers</p>
+            <p className="text-sm text-zinc-500">Aktivní odběratelé</p>
             <p className="text-2xl font-bold">{activeSubscribers ?? 0}</p>
           </CardContent>
         </Card>
         <Card className="glass">
           <CardContent className="pt-6">
-            <p className="text-sm text-zinc-500">Revenue gross / net</p>
+            <p className="text-sm text-zinc-500">Příjem hrubý / čistý</p>
             <p className="text-xl font-bold">
               {toCurrency(totals.gross)} / {toCurrency(totals.net)}
             </p>
@@ -121,7 +121,7 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
         </Card>
         <Card className="glass">
           <CardContent className="pt-6">
-            <p className="text-sm text-zinc-500">Views / Play intents</p>
+            <p className="text-sm text-zinc-500">Zobrazení / Play intents</p>
             <p className="text-xl font-bold">
               {totals.postViews} / {totals.playIntents}
             </p>
@@ -131,11 +131,11 @@ export default async function CreatorAnalyticsPage({ params, searchParams }: Pag
 
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Daily series</CardTitle>
+          <CardTitle>Denní série</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {(rows ?? []).length === 0 ? (
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">No analytics data for selected period.</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-300">Pro vybrané období nejsou dostupná data.</p>
           ) : (
             rows?.map((row) => (
               <div key={row.date} className="space-y-1">

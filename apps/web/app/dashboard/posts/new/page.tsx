@@ -26,9 +26,13 @@ export default async function NewPostPage({ searchParams }: PageProps) {
   if (!creator) {
     return (
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">New post</h2>
+        <h2 className="text-lg font-semibold">Nový příspěvek</h2>
         <p className="mt-2 text-sm text-zinc-700">
-          You need a creator profile first. Go to <Link href="/dashboard/creator" className="underline">Creator profile</Link>.
+          Nejdřív je potřeba vytvořit creator profil. Otevři{" "}
+          <Link href="/dashboard/creator" className="underline">
+            Creator profil
+          </Link>
+          .
         </p>
       </section>
     );
@@ -36,8 +40,8 @@ export default async function NewPostPage({ searchParams }: PageProps) {
 
   return (
     <section className="rounded-2xl glass p-6">
-      <h2 className="text-lg font-semibold">New post</h2>
-      <p className="mt-2 text-sm text-zinc-600">Create text post with optional Bunny Stream video attachment.</p>
+      <h2 className="text-lg font-semibold">Nový příspěvek</h2>
+      <p className="mt-2 text-sm text-zinc-600">Textový příspěvek s volitelným Bunny Stream videem.</p>
 
       <div className="mt-4 space-y-3">
         <Notice message={success} variant="success" />
@@ -48,7 +52,7 @@ export default async function NewPostPage({ searchParams }: PageProps) {
         <input type="hidden" name="creatorId" value={creator.id} />
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Title</label>
+          <label className="mb-1 block text-sm font-medium">Nadpis</label>
           <input
             type="text"
             name="title"
@@ -58,22 +62,22 @@ export default async function NewPostPage({ searchParams }: PageProps) {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Body</label>
+          <label className="mb-1 block text-sm font-medium">Obsah</label>
           <textarea name="body" rows={8} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Visibility</label>
+            <label className="mb-1 block text-sm font-medium">Viditelnost</label>
             <select name="visibility" defaultValue="public" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
-              <option value="public">Public</option>
-              <option value="members">Members</option>
-              <option value="tier">Tier minimum rank</option>
+              <option value="public">Veřejný</option>
+              <option value="members">Pro členy</option>
+              <option value="tier">Dle tier ranku</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Min tier rank (only for tier visibility)</label>
+            <label className="mb-1 block text-sm font-medium">Minimální tier rank (pro režim tier)</label>
             <input
               type="number"
               name="minTierRank"
@@ -84,10 +88,10 @@ export default async function NewPostPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <BunnyUploader title="Optional Bunny video" />
+        <BunnyUploader title="Volitelné Bunny video" />
 
         <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white">
-          Publish post
+          Publikovat příspěvek
         </button>
       </form>
     </section>

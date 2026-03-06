@@ -20,11 +20,11 @@ export default async function CreatorSubscribersPage({ params }: PageProps) {
   return (
     <Card className="glass">
       <CardHeader>
-        <CardTitle>Subscribers · {creator.title}</CardTitle>
+        <CardTitle>Odběratelé · {creator.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {(subscriptions ?? []).length === 0 ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">No subscribers yet.</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-300">Zatím žádní odběratelé.</p>
         ) : (
           subscriptions?.map((subscription) => {
             const profileRelation = subscription.profiles as
@@ -39,14 +39,14 @@ export default async function CreatorSubscribersPage({ params }: PageProps) {
             const tier = Array.isArray(tierRelation) ? tierRelation[0] : tierRelation;
 
             return (
-              <div key={subscription.id} className="rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
+              <div key={subscription.id} className="rounded-xl border border-zinc-200/80 p-3 dark:border-zinc-800/80">
                 <p className="font-medium">{profile?.display_name || profile?.username || subscription.user_id}</p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  Status: {subscription.status}
+                  Stav: {subscription.status}
                   {tier?.name ? ` · ${tier.name}` : ""}
                 </p>
                 <p className="text-xs text-zinc-500">
-                  Period end: {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleString() : "n/a"}
+                  Konec období: {subscription.current_period_end ? new Date(subscription.current_period_end).toLocaleString() : "n/a"}
                 </p>
               </div>
             );

@@ -36,8 +36,8 @@ export default async function EditPostPage({ params, searchParams }: PageProps) 
   );
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold">Edit post</h2>
+    <section className="rounded-2xl glass p-6">
+      <h2 className="text-lg font-semibold">Upravit příspěvek</h2>
 
       <div className="mt-4 space-y-3">
         <Notice message={success} variant="success" />
@@ -49,7 +49,7 @@ export default async function EditPostPage({ params, searchParams }: PageProps) 
         <input type="hidden" name="creatorId" value={post.creator_id} />
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Title</label>
+          <label className="mb-1 block text-sm font-medium">Nadpis</label>
           <input
             type="text"
             name="title"
@@ -60,7 +60,7 @@ export default async function EditPostPage({ params, searchParams }: PageProps) 
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium">Body</label>
+          <label className="mb-1 block text-sm font-medium">Obsah</label>
           <textarea
             name="body"
             rows={8}
@@ -71,20 +71,20 @@ export default async function EditPostPage({ params, searchParams }: PageProps) 
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium">Visibility</label>
+            <label className="mb-1 block text-sm font-medium">Viditelnost</label>
             <select
               name="visibility"
               defaultValue={post.visibility}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
             >
-              <option value="public">Public</option>
-              <option value="members">Members</option>
-              <option value="tier">Tier minimum rank</option>
+              <option value="public">Veřejný</option>
+              <option value="members">Pro členy</option>
+              <option value="tier">Dle tier ranku</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Min tier rank (for tier visibility)</label>
+            <label className="mb-1 block text-sm font-medium">Minimální tier rank (pro režim tier)</label>
             <input
               type="number"
               name="minTierRank"
@@ -97,18 +97,18 @@ export default async function EditPostPage({ params, searchParams }: PageProps) 
         </div>
 
         <BunnyUploader
-          title="Replace or keep Bunny video"
+          title="Nahradit nebo ponechat Bunny video"
           initialVideoId={existingVideo?.bunny_video_id ?? null}
           initialLibraryId={existingVideo?.bunny_library_id ?? null}
         />
 
         <label className="flex items-center gap-2 text-sm text-zinc-700">
           <input type="checkbox" name="removeVideo" value="true" />
-          Remove existing video (unless a new upload is provided)
+          Odstranit existující video (pokud není dodaný nový upload)
         </label>
 
         <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white">
-          Save post
+          Uložit příspěvek
         </button>
       </form>
     </section>

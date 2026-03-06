@@ -115,7 +115,7 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
     <div className="space-y-4">
       <Card className="glass">
         <CardHeader>
-          <CardTitle>Creator portal</CardTitle>
+          <CardTitle>Creator portál</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -132,40 +132,40 @@ export default async function CreatorPortalOverviewPage({ searchParams }: PagePr
                     <p className="font-medium">{creator.title}</p>
                     <p className="text-sm text-zinc-600 dark:text-zinc-300">@{creator.slug}</p>
                   </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{creator.role}</Badge>
-                  <Badge variant="outline">{creator.status}</Badge>
-                  <Badge variant="secondary">{creator.onboardingStatus}</Badge>
-                  {creator.stripeConnectReady ? <Badge variant="secondary">Stripe ready</Badge> : null}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{creator.role}</Badge>
+                    <Badge variant="outline">{creator.status}</Badge>
+                    <Badge variant="secondary">{creator.onboardingStatus}</Badge>
+                    {creator.stripeConnectReady ? <Badge variant="secondary">Stripe ready</Badge> : null}
+                  </div>
                 </div>
-              </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button asChild size="sm">
                     <Link href={`/dashboard/creator/${creator.creatorId}/onboarding`}>Onboarding</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/dashboard/creator/${creator.creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/dashboard/creator/${creator.creatorId}/profile`}>Profile</Link>
-                </Button>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/tiers`}>Tiers</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/posts`}>Posts</Link>
+                    <Link href={`/dashboard/creator/${creator.creatorId}/onboarding#stripe-connect`}>Stripe Connect</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/videos`}>Videos</Link>
+                    <Link href={`/dashboard/creator/${creator.creatorId}/profile`}>Profil</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/subscribers`}>Subscribers</Link>
+                    <Link href={`/dashboard/creator/${creator.creatorId}/tiers`}>Tiery</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/analytics`}>Analytics</Link>
+                    <Link href={`/dashboard/creator/${creator.creatorId}/posts`}>Příspěvky</Link>
                   </Button>
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/dashboard/creator/${creator.creatorId}/settings`}>Settings</Link>
+                    <Link href={`/dashboard/creator/${creator.creatorId}/videos`}>Videa</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/dashboard/creator/${creator.creatorId}/subscribers`}>Odběratelé</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/dashboard/creator/${creator.creatorId}/analytics`}>Analytika</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/dashboard/creator/${creator.creatorId}/settings`}>Nastavení</Link>
                   </Button>
                 </div>
               </div>

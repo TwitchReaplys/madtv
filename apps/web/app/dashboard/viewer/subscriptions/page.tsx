@@ -15,7 +15,7 @@ export default async function ViewerSubscriptionsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden glass">
       <CardHeader className="border-b border-zinc-200/70 bg-gradient-to-r from-[var(--accent)]/10 via-sky-500/6 to-transparent dark:border-zinc-800">
         <CardTitle>Moje členství</CardTitle>
       </CardHeader>
@@ -43,10 +43,10 @@ export default async function ViewerSubscriptionsPage() {
             const tier = Array.isArray(tierRelation) ? tierRelation[0] : tierRelation;
 
             return (
-              <div key={subscription.id} className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+              <div key={subscription.id} className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4 dark:border-zinc-800/80 dark:bg-zinc-950">
                 <p className="font-medium">{creator?.title ?? "Creator"}</p>
                 <p className="text-sm text-zinc-600 dark:text-zinc-300">
-                  Status: {subscription.status}
+                  Stav: {subscription.status}
                   {tier?.name ? ` · ${tier.name}` : ""}
                 </p>
                 <p className="text-xs text-zinc-500">

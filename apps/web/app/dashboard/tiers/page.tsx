@@ -25,11 +25,11 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
   if (!creator) {
     return (
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Tiers</h2>
+        <h2 className="text-lg font-semibold">Tiery</h2>
         <p className="mt-2 text-sm text-zinc-700">
-          You need a creator profile first. Open {" "}
+          Nejdřív je potřeba creator profil. Otevři{" "}
           <Link href="/dashboard/creator" className="underline">
-            Creator profile
+            Creator profil
           </Link>
           .
         </p>
@@ -46,8 +46,8 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
   return (
     <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">New tier</h2>
-        <p className="mt-2 text-sm text-zinc-600">Creating a tier automatically creates Stripe Product + Price.</p>
+        <h2 className="text-lg font-semibold">Nový tier</h2>
+        <p className="mt-2 text-sm text-zinc-600">Při vytvoření tieru se automaticky založí Stripe Product + Price.</p>
 
         <div className="mt-4 space-y-3">
           <Notice message={success} variant="success" />
@@ -58,18 +58,18 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
           <input type="hidden" name="creatorId" value={creator.id} />
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Name</label>
+            <label className="mb-1 block text-sm font-medium">Název</label>
             <input name="name" type="text" required className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Description</label>
+            <label className="mb-1 block text-sm font-medium">Popis</label>
             <textarea name="description" rows={3} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Price (cents)</label>
+              <label className="mb-1 block text-sm font-medium">Cena (haléře)</label>
               <input
                 name="priceCents"
                 type="number"
@@ -81,7 +81,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Currency</label>
+              <label className="mb-1 block text-sm font-medium">Měna</label>
               <input
                 name="currency"
                 type="text"
@@ -106,16 +106,16 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
           </div>
 
           <button type="submit" className="rounded-md bg-zinc-950 px-4 py-2 text-sm font-semibold text-white">
-            Create tier
+            Vytvořit tier
           </button>
         </form>
       </section>
 
       <section className="rounded-2xl glass p-6">
-        <h2 className="text-lg font-semibold">Existing tiers</h2>
+        <h2 className="text-lg font-semibold">Existující tiery</h2>
         <div className="mt-4 space-y-3">
           {(tiers ?? []).length === 0 ? (
-            <p className="text-sm text-zinc-700">No tiers yet.</p>
+            <p className="text-sm text-zinc-700">Zatím žádné tiery.</p>
           ) : (
             tiers?.map((tier) => (
               <article key={tier.id} className="rounded-md border border-zinc-200 p-4">
@@ -131,7 +131,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
                       tier.is_active ? "bg-emerald-100 text-emerald-900" : "bg-zinc-100 text-zinc-700"
                     }`}
                   >
-                    {tier.is_active ? "Active" : "Inactive"}
+                    {tier.is_active ? "Aktivní" : "Neaktivní"}
                   </span>
                 </div>
 
@@ -140,14 +140,14 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
                     <input type="hidden" name="tierId" value={tier.id} />
                     <input type="hidden" name="isActive" value={tier.is_active ? "false" : "true"} />
                     <button type="submit" className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-medium hover:bg-zinc-100">
-                      {tier.is_active ? "Deactivate" : "Activate"}
+                      {tier.is_active ? "Deaktivovat" : "Aktivovat"}
                     </button>
                   </form>
 
                   <form action={deleteTierAction}>
                     <input type="hidden" name="tierId" value={tier.id} />
                     <button type="submit" className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50">
-                      Delete
+                      Smazat
                     </button>
                   </form>
                 </div>

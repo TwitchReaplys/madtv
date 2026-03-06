@@ -15,8 +15,8 @@ export default async function DashboardLayout({
   const { user, hasCreatorAccess, hasViewerAccess, isPlatformAdmin } = await requireDashboardUser();
 
   const portalLinks = [
-    { href: "/dashboard/viewer", label: "Viewer portal", show: hasViewerAccess },
-    { href: "/dashboard/creator", label: "Creator portal", show: hasCreatorAccess },
+    { href: "/dashboard/viewer", label: "Divák", show: hasViewerAccess },
+    { href: "/dashboard/creator", label: "Tvůrce", show: hasCreatorAccess },
     { href: "/admin", label: "Admin", show: isPlatformAdmin },
   ].filter((link) => link.show);
 
