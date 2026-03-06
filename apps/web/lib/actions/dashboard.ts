@@ -33,6 +33,26 @@ function getTextValue(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function parsePriceAmountToCents(raw: string) {
+  const normalized = raw.trim().replace(/\s+/g, "").replace(",", ".");
+
+  if (!normalized) {
+    return null;
+  }
+
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) {
+    return null;
+  }
+
+  const amount = Number(normalized);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  return Math.round(amount * 100);
+}
+
 function isSafeAppPath(value: string) {
   return value.startsWith("/") && !value.startsWith("//");
 }
@@ -631,17 +651,97 @@ export async function openStripeConnectDashboardAction(formData: FormData) {
   }
 }
 
+export async function updateCreatorPricingSettingsAction(formData: FormData) {
+  const creatorIdRaw = getTextValue(formData, "creatorId");
+  const returnPath = getReturnPath(
+    formData,
+    creatorIdRaw ? `/dashboard/creator/${creatorIdRaw}/settings` : "/dashboard/creator",
+  );
+
+  const schema = z.object({
+    creatorId: z.string().uuid(),
+    pricingMode: z.enum(["tiers", "single"]),
+    singlePriceAmount: z.string().optional(),
+    singlePriceCurrency: z.string().trim().toUpperCase().length(3).default("CZK"),
+  });
+
+  const parsed = schema.safeParse({
+    creatorId: creatorIdRaw,
+    pricingMode: getTextValue(formData, "pricingMode"),
+    singlePriceAmount: getTextValue(formData, "singlePriceAmount"),
+    singlePriceCurrency: getTextValue(formData, "singlePriceCurrency") || "CZK",
+  });
+
+  if (!parsed.success) {
+    redirectWithMessage(returnPath, "error", parsed.error.issues[0]?.message ?? "Invalid pricing settings");
+  }
+
+  const { supabase } = await requireUser();
+  const isAdmin = await isCreatorAdmin(supabase, parsed.data.creatorId);
+
+  if (!isAdmin) {
+    redirectWithMessage(returnPath, "error", "You are not allowed to edit this creator");
+  }
+
+  let singlePriceCents: number | null = null;
+
+  if (parsed.data.pricingMode === "single") {
+    singlePriceCents = parsePriceAmountToCents(parsed.data.singlePriceAmount ?? "");
+
+    if (!singlePriceCents || singlePriceCents < 100) {
+      redirectWithMessage(returnPath, "error", "Jednotná cena musí být ve formátu 199 nebo 199,00.");
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from("creators")
+    .update({
+      pricing_mode: parsed.data.pricingMode,
+      single_price_cents: singlePriceCents,
+      single_price_currency: parsed.data.singlePriceCurrency,
+    })
+    .eq("id", parsed.data.creatorId);
+
+  if (updateError) {
+    redirectWithMessage(returnPath, "error", updateError.message);
+  }
+
+  revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/settings`);
+  revalidatePath(`/dashboard/creator/${parsed.data.creatorId}/profile`);
+  revalidatePath("/dashboard/creator");
+  revalidatePath("/dashboard/tiers");
+  revalidatePath("/");
+  revalidatePath("/explore");
+
+  const { data: creator } = await supabase
+    .from("creators")
+    .select("slug")
+    .eq("id", parsed.data.creatorId)
+    .maybeSingle();
+
+  if (creator?.slug) {
+    revalidatePath(`/c/${creator.slug}`);
+  }
+
+  redirectWithMessage(returnPath, "success", "Nastavení cen bylo uloženo.");
+}
+
 export async function createTierAction(formData: FormData) {
   const fallbackPath = getTextValue(formData, "creatorId")
     ? `/dashboard/creator/${getTextValue(formData, "creatorId")}/tiers`
     : "/dashboard/tiers";
   const returnPath = getReturnPath(formData, fallbackPath);
+  const parsedPriceCents = parsePriceAmountToCents(getTextValue(formData, "priceCents"));
+
+  if (!parsedPriceCents || parsedPriceCents < 100) {
+    redirectWithMessage(returnPath, "error", "Cena musí být ve formátu 199 nebo 199,00.");
+  }
 
   const parsed = tierCreateSchema.safeParse({
     creatorId: getTextValue(formData, "creatorId"),
     name: getTextValue(formData, "name"),
     description: getTextValue(formData, "description"),
-    priceCents: getTextValue(formData, "priceCents"),
+    priceCents: parsedPriceCents,
     currency: getTextValue(formData, "currency") || "CZK",
     rank: getTextValue(formData, "rank"),
   });

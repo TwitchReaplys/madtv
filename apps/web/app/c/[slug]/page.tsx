@@ -11,6 +11,8 @@ import { PostCard } from "@/components/creator/post-card";
 import { SubscribeCTA } from "@/components/creator/subscribe-cta";
 import { TierCards, type PublicTier } from "@/components/creator/tier-cards";
 import { Notice } from "@/components/notice";
+import { SubscribeButton } from "@/components/subscribe-button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -28,7 +30,7 @@ async function getCreatorBySlug(slug: string) {
   return supabase
     .from("creators")
     .select(
-      "id, slug, title, tagline, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, social_links, featured_media_type, featured_video_id, featured_thumbnail_url, featured_image_url",
+      "id, slug, title, tagline, about, owner_user_id, accent_color, cover_image_url, avatar_url, seo_description, social_links, featured_media_type, featured_video_id, featured_thumbnail_url, featured_image_url, pricing_mode, single_price_cents, single_price_currency",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -99,6 +101,16 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   const isOwner = user?.id === creator.owner_user_id;
   const activeRank = Number(memberRank ?? 0);
   const hasMembership = activeRank >= 1;
+  const pricingMode = creator.pricing_mode === "single" ? "single" : "tiers";
+  const typedTiers = (tiers ?? []) as PublicTier[];
+  const primaryTierId = typedTiers[0]?.id;
+  const singlePriceLabel =
+    typeof creator.single_price_cents === "number"
+      ? `${(creator.single_price_cents / 100).toLocaleString("cs-CZ", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} ${creator.single_price_currency ?? "CZK"}`
+      : null;
 
   const posts = (previewRows ?? []) as Array<{
     id: string;
@@ -147,11 +159,51 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
       </div>
 
       <section id={`tiers-${creator.slug}`} className="mx-auto w-full max-w-4xl px-4 py-12 space-y-4 scroll-mt-20">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
-        </div>
-        <TierCards tiers={(tiers ?? []) as PublicTier[]} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
+        {pricingMode === "single" ? (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold tracking-tight">Členství</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                Tento tvůrce používá jednotnou cenu bez tierů.
+              </p>
+            </div>
+
+            <Card className="glass">
+              <CardHeader>
+                <CardTitle>Jednotné členství</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {singlePriceLabel ? (
+                  <p className="text-lg font-semibold text-[var(--accent)]">{singlePriceLabel} / měsíc</p>
+                ) : (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">Cena bude doplněna tvůrcem.</p>
+                )}
+
+                {primaryTierId ? (
+                  user ? (
+                    <SubscribeButton tierId={primaryTierId} />
+                  ) : (
+                    <Button asChild>
+                      <a href={`/login?next=/c/${creator.slug}`}>Přihlásit a odebírat</a>
+                    </Button>
+                  )
+                ) : (
+                  <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                    Pro aktivaci checkoutu vytvoř v dashboardu aspoň jeden aktivní plán.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold tracking-tight">Předplatné</h2>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">Vyber si úroveň přístupu a odemkni prémiové příspěvky.</p>
+            </div>
+            <TierCards tiers={typedTiers} isAuthenticated={Boolean(user)} loginUrl={`/login?next=/c/${creator.slug}`} />
+          </>
+        )}
       </section>
 
       <section className="mx-auto w-full max-w-4xl px-4 pb-24 space-y-4">
@@ -197,9 +249,11 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
         creatorSlug={creator.slug}
         creatorName={creator.title}
         lowestPrice={
-          tiers && tiers.length > 0
-            ? `${((tiers[0].price_cents as number) / 100).toLocaleString("cs-CZ")} ${(tiers[0].currency as string)}`
-            : undefined
+          pricingMode === "single"
+            ? singlePriceLabel ?? undefined
+            : typedTiers.length > 0
+              ? `${((typedTiers[0].price_cents as number) / 100).toLocaleString("cs-CZ")} ${(typedTiers[0].currency as string)}`
+              : undefined
         }
         hasMembership={hasMembership || isOwner}
       />

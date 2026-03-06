@@ -9,6 +9,15 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
+function formatTierPrice(priceCents: number, currency: string) {
+  return new Intl.NumberFormat("cs-CZ", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(priceCents / 100);
+}
+
 export default async function DashboardTiersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const success = typeof params.success === "string" ? params.success : null;
@@ -69,16 +78,17 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
 
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-sm font-medium">Cena (haléře)</label>
+              <label className="mb-1 block text-sm font-medium">Cena (CZK / měsíc)</label>
               <input
                 name="priceCents"
-                type="number"
-                min={100}
-                step={1}
+                type="text"
                 required
-                defaultValue={199}
+                defaultValue="199,00"
+                inputMode="decimal"
+                placeholder="199,00"
                 className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
               />
+              <p className="mt-1 text-xs text-zinc-500">Použij formát 199 nebo 199,00.</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Měna</label>
@@ -122,7 +132,7 @@ export default async function DashboardTiersPage({ searchParams }: PageProps) {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">{tier.name}</h3>
-                    <p className="text-sm text-zinc-700">Rank {tier.rank} · {(tier.price_cents / 100).toFixed(2)} {tier.currency}</p>
+                    <p className="text-sm text-zinc-700">Rank {tier.rank} · {formatTierPrice(tier.price_cents, tier.currency)}</p>
                     {tier.description ? <p className="mt-1 text-sm text-zinc-600">{tier.description}</p> : null}
                     <p className="mt-1 text-xs text-zinc-500">Stripe price: {tier.stripe_price_id ?? "n/a"}</p>
                   </div>

@@ -25,22 +25,10 @@ export function LockedPostCard({ post }: LockedPostCardProps) {
 
   return (
     <Card className="glass relative overflow-hidden">
-      {post.has_video ? (
-        <div className="relative border-b border-zinc-200/80 dark:border-zinc-800/80">
-          {post.video_thumbnail_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={post.video_thumbnail_url} alt={`${post.title} preview`} className="aspect-video w-full object-cover opacity-70" />
-          ) : (
-            <div className="aspect-video w-full bg-gradient-to-br from-zinc-200 to-zinc-100 dark:from-zinc-800 dark:to-zinc-900" />
-          )}
-          <div className="absolute inset-0 bg-zinc-950/30" />
-        </div>
-      ) : null}
-
-      <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)]/92 via-[var(--background)]/45 to-transparent" />
-      <CardHeader className="relative z-10">
+      <div className="absolute inset-0 z-10 bg-gradient-to-t from-[var(--background)]/90 to-transparent" />
+      <CardHeader className="relative z-20 pb-3">
         <div className="flex items-center justify-between">
-          <Badge className="bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/35">
+          <Badge className="border border-[var(--accent)]/35 bg-[var(--accent)]/20 text-[var(--accent)]">
             <Lock className="mr-1 h-3 w-3" />
             {post.visibility === "tier" && post.min_tier_rank
               ? `${tierNames[post.min_tier_rank] || `Tier ${post.min_tier_rank}`}+`
@@ -56,12 +44,15 @@ export function LockedPostCard({ post }: LockedPostCardProps) {
           {post.title}
         </CardTitle>
       </CardHeader>
-      <CardContent className="relative z-10 pt-0">
-        <div className="mb-3 h-10 rounded-md bg-zinc-300/30 blur-[1px] dark:bg-zinc-700/25" />
-        <div className="h-8 w-3/4 rounded-md bg-zinc-300/20 blur-[1px] dark:bg-zinc-700/20" />
+      <CardContent className="relative z-20">
+        <div className="mb-3 h-12 rounded-md bg-zinc-300/25 blur-sm dark:bg-zinc-700/25" />
+        <div className="h-8 w-3/4 rounded-md bg-zinc-300/20 blur-sm dark:bg-zinc-700/20" />
         <Button className="mt-4 w-full" size="sm">
-          <Lock className="h-4 w-4" />
-          Odemknout příspěvek
+          <Lock className="mr-2 h-4 w-4" />
+          Odemknout – odebírat{" "}
+          {post.visibility === "tier" && post.min_tier_rank
+            ? tierNames[post.min_tier_rank] || `Tier ${post.min_tier_rank}`
+            : ""}
         </Button>
       </CardContent>
     </Card>
