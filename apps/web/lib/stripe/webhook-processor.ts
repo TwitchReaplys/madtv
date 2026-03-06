@@ -182,6 +182,36 @@ async function upsertSubscriptionFromStripe(params: {
   }
 }
 
+export async function syncSubscriptionFromCheckoutSessionId(params: {
+  supabase: AdminSupabaseClient;
+  stripe: Stripe;
+  sessionId: string;
+  expectedUserId?: string;
+}) {
+  const { supabase, stripe, sessionId, expectedUserId } = params;
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const subscriptionId = getSubscriptionIdFromCheckoutSession(session);
+
+  if (session.mode !== "subscription" || !subscriptionId) {
+    return;
+  }
+
+  if (expectedUserId && session.metadata?.userId && session.metadata.userId !== expectedUserId) {
+    throw new Error(`Checkout session ${sessionId} does not belong to expected user`);
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  await upsertSubscriptionFromStripe({
+    supabase,
+    subscription,
+    fallbackMetadata: {
+      userId: session.metadata?.userId,
+      creatorId: session.metadata?.creatorId,
+      tierId: session.metadata?.tierId,
+    },
+  });
+}
+
 export async function processStripeEventPayload(params: {
   supabase: AdminSupabaseClient;
   stripe: Stripe;

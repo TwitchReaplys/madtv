@@ -14,6 +14,9 @@ import { Notice } from "@/components/notice";
 import { SubscribeButton } from "@/components/subscribe-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getStripeClient } from "@/lib/stripe";
+import { syncSubscriptionFromCheckoutSessionId } from "@/lib/stripe/webhook-processor";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getAuthUser } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -34,6 +37,26 @@ async function getCreatorBySlug(slug: string) {
     )
     .eq("slug", slug)
     .maybeSingle();
+}
+
+async function syncCheckoutSubscription(sessionId: string, userId: string) {
+  const supabase = createAdminSupabaseClient();
+  const stripe = getStripeClient();
+
+  try {
+    await syncSubscriptionFromCheckoutSessionId({
+      supabase,
+      stripe,
+      sessionId,
+      expectedUserId: userId,
+    });
+  } catch (error) {
+    console.error("Failed to sync checkout subscription", {
+      sessionId,
+      userId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -64,6 +87,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CreatorPublicPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const query = await searchParams;
+  const checkoutSessionId = typeof query.session_id === "string" ? query.session_id : null;
 
   const checkoutSuccess = query.checkout === "success" ? "Předplatné bylo aktivováno. Přístup se brzy propíše." : null;
   const checkoutCancel = query.checkout === "cancel" ? "Platba byla zrušena." : null;
@@ -71,6 +95,10 @@ export default async function CreatorPublicPage({ params, searchParams }: PagePr
   const supabase = await createServerSupabaseClient();
   const cookieStore = await cookies();
   const { user } = await getAuthUser(supabase, cookieStore.getAll());
+
+  if (query.checkout === "success" && checkoutSessionId && user?.id) {
+    await syncCheckoutSubscription(checkoutSessionId, user.id);
+  }
 
   const { data: creator, error: creatorError } = await getCreatorBySlug(slug);
 
