@@ -34,7 +34,7 @@ sudo K8S_MINOR=v1.35 ./00-prereqs-ubuntu.sh
 
 ```bash
 cd infra/k8s/bootstrap-kubeadm
-sudo VIP=192.168.10.50 INTERFACE=eno1 POD_CIDR=10.244.0.0/16 ./10-init-first-control-plane.sh
+sudo VIP=192.168.10.50 INTERFACE=eno1 ADVERTISE_ADDRESS=192.168.10.11 POD_CIDR=10.244.0.0/16 ./10-init-first-control-plane.sh
 ```
 
 Po dokončení:
@@ -111,6 +111,25 @@ sudo kubeadm reset -f
 sudo rm -rf /etc/cni/net.d /etc/kubernetes /var/lib/etcd /var/lib/kubelet/pki
 sudo systemctl restart containerd kubelet
 ```
+
+## Troubleshooting: `context deadline exceeded` na VIP
+
+Pokud `kubeadm init` skončí chybou:
+`unable to create ClusterRoleBinding ... Post "https://<VIP>:6443/...": context deadline exceeded`,
+znamená to, že node nedosáhl na API přes VIP.
+
+Na prvním control-plane zkontroluj:
+
+```bash
+ip -4 a show
+ip -4 a show | grep "<VIP>"
+sudo crictl ps -a | egrep "kube-vip|kube-apiserver"
+sudo crictl logs "$(sudo crictl ps -a --name kube-vip -q | head -n1)"
+curl -k https://127.0.0.1:6443/healthz
+curl -k https://<VIP>:6443/healthz
+```
+
+Nejčastější příčina je špatný `INTERFACE` nebo nevyplněný/špatný `ADVERTISE_ADDRESS`.
 
 ## Zdroje
 

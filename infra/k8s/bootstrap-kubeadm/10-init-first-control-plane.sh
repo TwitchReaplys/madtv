@@ -10,9 +10,25 @@ VIP="${VIP:-}"
 INTERFACE="${INTERFACE:-}"
 POD_CIDR="${POD_CIDR:-10.244.0.0/16}"
 KVVERSION="${KVVERSION:-v0.8.10}"
+ADVERTISE_ADDRESS="${ADVERTISE_ADDRESS:-}"
 
 if [[ -z "${VIP}" || -z "${INTERFACE}" ]]; then
-  echo "Usage: sudo VIP=<api-vip> INTERFACE=<nic> [POD_CIDR=10.244.0.0/16] [KVVERSION=v0.8.10] $0" >&2
+  echo "Usage: sudo VIP=<api-vip> INTERFACE=<nic> [ADVERTISE_ADDRESS=<node-ip>] [POD_CIDR=10.244.0.0/16] [KVVERSION=v0.8.10] $0" >&2
+  exit 1
+fi
+
+if ! ip link show "${INTERFACE}" >/dev/null 2>&1; then
+  echo "Network interface '${INTERFACE}' does not exist on this host." >&2
+  exit 1
+fi
+
+if [[ -z "${ADVERTISE_ADDRESS}" ]]; then
+  ADVERTISE_ADDRESS="$(ip -4 -o addr show dev "${INTERFACE}" | awk '{split($4,a,"/"); print a[1]; exit}')"
+fi
+
+if [[ -z "${ADVERTISE_ADDRESS}" ]]; then
+  echo "Cannot determine ADVERTISE_ADDRESS from interface '${INTERFACE}'." >&2
+  echo "Pass it explicitly, for example ADVERTISE_ADDRESS=10.40.0.11" >&2
   exit 1
 fi
 
@@ -30,6 +46,7 @@ ctr run --rm --net-host "ghcr.io/kube-vip/kube-vip:${KVVERSION}" vip \
 
 echo "[2/5] kubeadm init..."
 kubeadm init \
+  --apiserver-advertise-address "${ADVERTISE_ADDRESS}" \
   --control-plane-endpoint "${VIP}:6443" \
   --upload-certs \
   --pod-network-cidr "${POD_CIDR}"

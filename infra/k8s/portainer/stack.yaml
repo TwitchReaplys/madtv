@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: madtv
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: madtv-config
+  namespace: madtv
+data:
+  NEXT_PUBLIC_APP_URL: "https://madtv.example.com"
+  NEXT_PUBLIC_SUPABASE_URL: "https://supabase.example.com"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "REPLACE_ME"
+  NEXT_PUBLIC_SUPABASE_COOKIE_SECURE: "true"
+  REDIS_URL: "redis://redis.madtv.svc.cluster.local:6379"
+  STRIPE_PORTAL_RETURN_URL: "https://madtv.example.com/dashboard"
+  STRIPE_CONNECT_REFRESH_URL: "https://madtv.example.com/dashboard/creator/{creatorId}/settings"
+  STRIPE_CONNECT_RETURN_URL: "https://madtv.example.com/dashboard/creator/{creatorId}/settings"
+  BUNNY_STREAM_LIBRARY_ID: "REPLACE_ME"
+  WORKER_CONCURRENCY: "6"
+  WORKER_SERVICE_NAME: "worker"
+  LOG_LEVEL: "info"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: madtv-secrets
+  namespace: madtv
+type: Opaque
+stringData:
+  SUPABASE_SERVICE_ROLE_KEY: "REPLACE_ME"
+  STRIPE_SECRET_KEY: "REPLACE_ME"
+  STRIPE_WEBHOOK_SECRET: "REPLACE_ME"
+  BUNNY_STREAM_API_KEY: "REPLACE_ME"
+  BUNNY_EMBED_TOKEN_KEY: ""
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: madtv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 8Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: madtv
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: madtv
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/part-of: madtv
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          args:
+            - redis-server
+            - --appendonly
+            - "yes"
+          ports:
+            - name: redis
+              containerPort: 6379
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: madtv
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: madtv
+spec:
+  selector:
+    app.kubernetes.io/name: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: madtv
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: madtv
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web
+        app.kubernetes.io/part-of: madtv
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/your-org/madtv-web:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: madtv-config
+            - secretRef:
+                name: madtv-secrets
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 384Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: madtv
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: madtv
+spec:
+  selector:
+    app.kubernetes.io/name: web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-pdb
+  namespace: madtv
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: madtv
+  labels:
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: madtv
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: worker
+        app.kubernetes.io/part-of: madtv
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/your-org/madtv-worker:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: madtv-config
+            - secretRef:
+                name: madtv-secrets
+          resources:
+            requests:
+              cpu: 150m
+              memory: 256Mi
+            limits:
+              cpu: 800m
+              memory: 768Mi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-pdb
+  namespace: madtv
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worker
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  namespace: madtv
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "32m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - madtv.example.com
+      secretName: madtv-tls
+  rules:
+    - host: madtv.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 80

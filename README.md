@@ -252,6 +252,15 @@ Worker Dockerfile:
 Compose example:
 - `docker-compose.example.yml`
 
+## Kubernetes / Portainer
+
+Bootstrap (kubeadm + kube-vip):
+- `infra/k8s/bootstrap-kubeadm/README.md`
+
+App deployment stack for Portainer:
+- `infra/k8s/portainer/README.md`
+- `infra/k8s/portainer/stack.yaml`
+
 Health endpoint:
 - `/api/health`
 
