@@ -4,11 +4,13 @@
   "version": "0.2.0",
   "scripts": {
     "dev:web": "pnpm --filter @madtv/web dev",
+    "dev:mobile": "pnpm --filter @madtv/mobile dev",
     "build:web": "pnpm --filter @madtv/web build",
     "start:web": "pnpm --filter @madtv/web start",
     "dev:worker": "pnpm --filter @madtv/worker dev",
     "build:worker": "pnpm --filter @madtv/worker build",
     "start:worker": "pnpm --filter @madtv/worker start",
+    "typecheck:mobile": "pnpm --filter @madtv/mobile typecheck",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
   }
